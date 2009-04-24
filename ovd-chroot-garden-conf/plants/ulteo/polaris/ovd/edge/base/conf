@@ -1,0 +1,38 @@
+<garden>
+  <plant value='base'>
+    <debootstrap value="1" />
+    <name value="base" />
+    <make value="tgz" arch="all"/>
+    <seed value="minimal-common minimal" />
+    <seed value="standard-common standard" />
+    <seed value="restricted-common restricted" />
+    <seed value="xserver-common xserver" />
+    <seed value="desktop-common desktop" />
+    <seed value="connecteddesktop" />
+    <!--<priority>00</priority>-->
+    <debconf value="sun-java6-bin" 
+    		template="shared/accepted-sun-dlj-v1-1" 
+    		type="boolean" 
+    		default="true"/>
+    <debconf value="sun-java6-jre" 
+    		template="shared/accepted-sun-dlj-v1-1" 
+    		type="boolean" 
+    		default="true"/>
+    <debconf value="flashplugin-nonfree" 
+    		template="flashplugin-nonfree/httpget" 
+    		type="boolean" 
+    		default="true"/>
+    <debconf value="skype" 
+    		template="shared/accepted-skype-eula" 
+    		type="boolean" 
+    		default="true"/>
+    <debconf value="dictionaries-common/default-ispell"
+                template="dictionaries-common/default-ispell"
+                type="string"
+                default="Manual symlinks setting"/>
+    <debconf value="dictionaries-common/default-wordlist"
+                template="dictionaries-common/default-wordlist"
+                type="string"
+                default="american (American English)"/>
+  </plant>
+</garden>
