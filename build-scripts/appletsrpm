@@ -1,0 +1,95 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import os, sys
+import urllib, urllib2
+from tempfile import mkdtemp
+from shutil import rmtree
+
+WORKDIR = mkdtemp()
+
+BASE_URL = 'http://archive.ulteo.com/ulteo/ovd'
+DEFAULT_REPO = '2.0-staging'
+
+def get_package_uri (repo=DEFAULT_REPO):
+    url = '%s/dists/%s/main/source/Sources'%(BASE_URL,repo)
+    try:
+        sources = urllib2.urlopen(urllib2.Request(url))
+    except:
+        return None
+
+    line = sources.readline()
+    while line:
+        line = line[:-1]
+        if line != 'Package: ovd-applets':
+            line = sources.readline()
+            continue
+
+        line = sources.readline()
+        while not line.startswith('Version:'):
+            line = sources.readline()
+            continue
+        version = line[:-1].split(' ')[1]
+        uri = '%s/pool/main/o/ovd-applets/ulteo-ovd-applets_%s_all.deb'%(BASE_URL,version)
+
+        return version, uri
+
+
+
+if len(sys.argv) > 1:
+    repo = sys.argv[1]
+else:
+    repo = DEFAULT_REPO
+
+if repo in ['2.0', 'trunk']:
+    repo = '2.0-staging'
+
+version, pkg_uri = get_package_uri(repo)
+upstream_version = version.split('-')[0]
+local_pkg = '%s/applets.deb'%WORKDIR
+urllib.urlretrieve(pkg_uri, local_pkg)
+cmd = 'dpkg -x %s %s'%(local_pkg, WORKDIR)
+os.system(cmd)
+cmd = 'mv %s/usr/share/ulteo %s/usr/share/ovd-applets-%s'%(WORKDIR,WORKDIR,upstream_version)
+os.system(cmd)
+cmd = 'tar czf /home/gauvain/rpmbuild/SOURCES/ovd-applets-%s.tar.gz -C %s/usr/share ovd-applets-%s'%(version.split('-')[0],WORKDIR,upstream_version)
+os.system(cmd)
+
+spec_data = """Summary: Ulteo OVD - Applets
+Name: ovd-applets
+Version: %s
+Release: 1
+License: GPL2
+Group: Applications/System
+Source0: %%{name}-%%{version}.tar.gz
+BuildArch: noarch
+
+%%description
+Ulteo OVD java applets.
+
+%%prep
+%%setup -q
+
+%%build
+
+%%install
+mkdir -p $RPM_BUILD_ROOT/usr/share/ulteo
+cp -a applets $RPM_BUILD_ROOT/usr/share/ulteo
+
+%%clean
+rm -rf $RPM_BUILD_ROOT
+
+%%files
+/
+
+%%changelog
+* Fri Jan 02 2009 Gauvain Pocentek <gauvain@ulteo.com> %s-1
+- Initial release
+"""%(upstream_version,upstream_version)
+
+open ('/home/gauvain/rpmbuild/SPECS/ovd-applets.spec', 'w').write(spec_data)
+
+cmd = 'cd /home/gauvain/rpmbuild/SPECS && rpmbuild "-ba --sign --buildroot /tmp/rpmbuild ovd-applets.spec"'
+os.system(cmd)
+
+rmtree(WORKDIR)

@@ -33,20 +33,22 @@ set -x
 
 cd $OVD/SessionManager
 rm -f ovd-session-manager*.tar.gz
-./autogen.sh && ./configure && make && make distcheck
+./autogen.sh && make && make distcheck
 cp ovd-session-manager*.tar.gz $SOURCES
 cp ovd-session-manager.spec $SPECS
 
 cd $OVD/ApplicationServer
 rm -f ovd-application-server*.tar.gz
-./autogen.sh && ./configure && make && make distcheck
+./autogen.sh && make && make distcheck
 cp ovd-application-server*.tar.gz $SOURCES
 cp ovd-application-server.spec $SPECS
 
 set +e
 cd $SPECS
 for spec in $(ls ovd*spec); do
-    rpmbuild "-ba --buildroot /tmp/rpmbuild $spec"
+    rpmbuild "-ba --sign --buildroot /tmp/rpmbuild $spec"
 done
+
+appletsrpm
 
 exit 0
