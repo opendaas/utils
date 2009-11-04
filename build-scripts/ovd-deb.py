@@ -31,6 +31,7 @@ BUILD_DIR = '%s/build'%BASE_DIR
 RESULTS_DIR = '%s/results'%BASE_DIR
 SVN_BASE_DIR = '%s/svn'%BASE_DIR
 DEFAULT_BRANCH = 'trunk'
+RELEASES_DIR = '/home/gauvain/releases/ovd'
 
 AUTOTOOLS_CMD = [['./autogen.sh'], ['./configure'], ['make', 'distcheck']]
 ANT_CMD = [['./bootstrap'], ['ant', 'dist']]
@@ -144,12 +145,17 @@ class DebBuild:
 
         if self._module != 'meta':
             self._tarball_name = '%s-%s%s.tar.gz'%(packages[self._module][0],branches[branch][1],self._revno)
-            self._tarball_path = '%s/%s'%(self._module_path,self._tarball_name)
             self._package, self._version = parse_tarball_name(self._tarball_name)
+
             if not self._do_release:
+                self._tarball_path = '%s/%s'%(self._module_path,self._tarball_name)
                 self._deb_version = '%s-0ulteo0'%self._version
             else:
+                self._version=release
+                self._tarball_path = '%s/%s/publish/ulteo-ovd-%s/%s-%s.tar.gz'%(
+                    RELEASES_DIR,self._version,self._version,packages[self._module][0],self._version)
                 self._deb_version = self._get_changelog_version()
+
             self._deb_orig_name = '%s_%s.orig.tar.gz'%(self._package,self._version)
             self._deb_orig_path = '%s/%s'%(BUILD_DIR,self._deb_orig_name)
             self._deb_src_dir = '%s/%s-%s'%(BUILD_DIR,self._package,self._version)
@@ -216,18 +222,30 @@ class DebBuild:
         return ret
 
     def _build_source(self):
-        log_start(" Building the source tarball")
-        if self._module != 'meta':
-            if not self._make_dist():
+        if self._do_release:
+            log_start(" Getting the source tarball")
+            if not os.path.isfile (self._tarball_path):
                 log_end(False)
                 return False
-            os.rename(self._tarball_path, self._deb_orig_path)
-            self._run(['tar', 'zxf', self._deb_orig_path, '-C', BUILD_DIR], False, self._svn_base)
+            shutil.copy (self._tarball_path, self._deb_orig_path)
+            self._run (['tar', 'zxf', self._deb_orig_path, '-C', BUILD_DIR], False)
             shutil.copytree(self._debian_path, '%s/debian'%self._deb_src_dir)
+            log_end(True)
+
+
         else:
-            shutil.copytree('%s/debian/%s'%(self._svn_base,self._package),
-                             '%s/ulteo-ovd-%s'%(BUILD_DIR,self._version))
-        log_end(True)
+            log_start(" Building the source tarball")
+            if self._module != 'meta':
+                if not self._make_dist():
+                    log_end(False)
+                    return False
+                os.rename(self._tarball_path, self._deb_orig_path)
+                self._run(['tar', 'zxf', self._deb_orig_path, '-C', BUILD_DIR], False, self._svn_base)
+                shutil.copytree(self._debian_path, '%s/debian'%self._deb_src_dir)
+            else:
+                shutil.copytree('%s/debian/%s'%(self._svn_base,self._package),
+                                 '%s/ulteo-ovd-%s'%(BUILD_DIR,self._version))
+            log_end(True)
 
         # TODO: drop svn dirs using python
         os.system('rm -rf $(find %s -name .svn)'%self._deb_src_dir)
@@ -295,7 +313,7 @@ class DebBuild:
 if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                           'okrnb:',
+                           'okr:nb:',
                           ['stdout', 'keeplog', 'release', 'no-publish', 'branch'])
     except getopt.GetoptError, err:
         print >> sys.stderr, 'Error parsing the command line'
@@ -318,7 +336,7 @@ if __name__ == '__main__':
                 print 'Unknown branch: %s'%a
                 sys.exit(1)
         if o in ('-r', '--release'):
-            release = True
+            release = a
         if o in ('-k', '--keeplog'):
             keeplog = True
         if o in ('-o', '--stdout'):

@@ -1,15 +1,23 @@
 #!/bin/bash
 
-BRANCH=trunk
+set -x
 
+BRANCH=trunk
+PUBLISHDIR="/home/gauvain/repos/rpm/rhel5/2.0-staging"
 if [ -n "$1" ]; then
     case $1 in
         1.1)
-            BRANCH=branches/1.1;;
+            BRANCH=branches/1.1
+            PUBLISHDIR=/home/gauvain/repos/rpm/rhel5/1.1-staging
+            ;;
         2.0)
-            BRANCH=trunk;;
+            BRANCH=trunk
+            PUBLISHDIR="/home/gauvain/repos/rpm/rhel5/2.0-staging"
+            ;;
         trunk)
-            BRANCH=trunk;;
+            BRANCH=trunk
+            PUBLISHDIR="/home/gauvain/repos/rpm/rhel5/2.0-staging"
+            ;;
         *)
             echo "Unknown branch $1"
             exit 1
@@ -21,6 +29,8 @@ SVN=/home/gauvain/svn/ovd
 OVD=$SVN/$BRANCH
 SPECS=/home/gauvain/rpmbuild/SPECS
 SOURCES=/home/gauvain/rpmbuild/SOURCES
+RPMS=/home/gauvain/rpmbuild/RPMS
+SRPMS=/home/gauvain/rpmbuild/SRPMS
 
 rm -rf $(find /home/gauvain/rpmbuild/ | grep ovd)
 
@@ -31,17 +41,26 @@ cd $OVD
 
 set -x
 
+# We rebuild the sources for the release too, to get the .spec file
 cd $OVD/SessionManager
 rm -f ovd-session-manager*.tar.gz
 ./autogen.sh && make && make distcheck
-cp ovd-session-manager*.tar.gz $SOURCES
 cp ovd-session-manager.spec $SPECS
+if [ -n "$OVD_RELEASE" ]; then
+    cp /home/gauvain/releases/ovd/$OVD_RELEASE/publish/ulteo-ovd-$OVD_RELEASE/ovd-session-manager-$OVD_RELEASE.tar.gz $SOURCES
+else
+    cp ovd-session-manager*.tar.gz $SOURCES
+fi
 
 cd $OVD/ApplicationServer
 rm -f ovd-application-server*.tar.gz
 ./autogen.sh && make && make distcheck
-cp ovd-application-server*.tar.gz $SOURCES
 cp ovd-application-server.spec $SPECS
+if [ -n "$OVD_RELEASE" ]; then
+    cp /home/gauvain/releases/ovd/$OVD_RELEASE/publish/ulteo-ovd-$OVD_RELEASE/ovd-application-server-$OVD_RELEASE.tar.gz $SOURCES
+else
+    cp ovd-application-server*.tar.gz $SOURCES
+fi
 
 set +e
 cd $SPECS
@@ -49,6 +68,23 @@ for spec in $(ls ovd*spec); do
     rpmbuild "-ba --sign --buildroot /tmp/rpmbuild $spec"
 done
 
-appletsrpm
+[ $BRANCH = trunk ] && appletsrpm
+
+#
+# publication
+#
+
+# remove the old files
+find $PUBLISHDIR -name "*.rpm" -exec rm {} \;
+
+# move the new src.rpm and binary rpms
+mkdir -p $PUBLISHDIR/SRPMS $PUBLISHDIR/i386
+mv $(find $SRPMS -name "*.rpm") $PUBLISHDIR/SRPMS
+mv $(find $RPMS -name "*.rpm") $PUBLISHDIR/i386
+
+# gen the repository data
+cd $PUBLISHDIR
+createrepo --update .
+gpg -a --yes --detach-sign repodata/repomd.xml
 
 exit 0
