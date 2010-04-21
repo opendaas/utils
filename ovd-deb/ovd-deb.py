@@ -122,7 +122,7 @@ def is_deb_built():
 def cleanup():
     os.unlink(LOCK_FILE)
 
-def run(args, logfile=None, cwd=None):
+def run(args, logfile=None, cwd=None, ssh=False):
 
     if logfile == -1:
         if cwd:
@@ -134,6 +134,13 @@ def run(args, logfile=None, cwd=None):
             out = open(logfile, 'a')
         else:
             out = open('/dev/null', 'a')
+
+    if ssh and SSH_CMD is not None:
+        cmd = ''
+        for i in args:
+            cmd += i + ' '
+        args = SSH_CMD.split(' ')
+        args.append(cmd)
 
     process = Popen(args, stdout=out, stderr=STDOUT, cwd=cwd)
     process.communicate()
@@ -185,7 +192,6 @@ class DebBuild:
         repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
         local_rev = get_local_rev(self._dist_name, \
                         '%s_%s'%(self._module_name, self._upstream_version))
-        print repo_rev, local_rev
         self._deb_rev = max(repo_rev, local_rev) + 1
         self._version = '%s-%d' % (self._upstream_version, self._deb_rev)
         self._src_name = '%s_%s'%(self._module_name, self._version)
@@ -223,17 +229,11 @@ class DebBuild:
             return False
 
     def _run(self, args, log=True, cwd=BUILD_DIR, ssh=False):
-        if ssh and SSH_CMD is not None:
-            cmd = ''
-            for i in args:
-                cmd += i + ' '
-            args = SSH_CMD.split(' ')
-            args.append(cmd)
         if log:
             if not self._on_stdout:
-                return run(args, self._logfile, cwd)
+                return run(args, self._logfile, cwd, ssh=ssh)
             else:
-                return run(args, -1, cwd)
+                return run(args, -1, cwd, ssh=ssh)
         else:
             return run(args, cwd=cwd)
 
@@ -480,9 +480,7 @@ if __name__ == '__main__':
 
     if publish:
         print '\n[Updating the OVD package list website]'
-        cmd = SSH_CMD.split(' ')
-        cmd.append("'/home/gauvain/bin/ovdweb.sh'")
-        run(cmd)
+        run(['/home/gauvain/bin/ovdweb.sh'], ssh=True)
 
     text = '\n'
     for module in sumup.keys():
