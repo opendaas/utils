@@ -43,7 +43,7 @@ PYTHON_CMD = [['./autogen.py'], ['python', 'setup.py', 'sdist', '--dist-dir=.']]
 ANY_ARCH = ['amd64', 'i386']
 ALL_ARCH = ['all']
 
-# { tagname : [src_folder, self._module_name, command, arch]}
+# { tagname : [self._src_folder, self._module_name, command, arch]}
 packages = {
     'ovd25':{
         'java'     : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
@@ -66,7 +66,7 @@ packages = {
     }
 }
 
-BASE_DIR = '/home/samuel/ulteo'
+BASE_DIR = '/home/samuel/ovd-deb'
 LOCK_FILE = BASE_DIR+'/.locked'
 LOGS_DIR = BASE_DIR+'/logs'
 BUILD_DIR = BASE_DIR+'/build'
@@ -165,15 +165,15 @@ class DebBuild:
         self._revno = get_revno(self._svn_base)
 
         self._dist_name = branches[self._branch][1]
-        src_folder = packages[self._branch][self._module][0]
+        self._src_folder = packages[self._branch][self._module][0]
         self._module_name = packages[self._branch][self._module][1]
 
         if branch != 'xrdp':
             debian_folder = self._module_name
         else:
-            debian_folder = src_folder
+            debian_folder = self._src_folder
 
-        self._module_dir = '%s/%s'%(self._svn_base, src_folder)
+        self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
         self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
             branches[self._branch][3], debian_folder)
         self._upstream_version = self._get_base_version()
@@ -182,7 +182,7 @@ class DebBuild:
         self._src_name = '%s-%s'%(self._module_name, self._upstream_version)
         repo_rev = get_repo_rev(self._branch, self._module_name)
         local_rev = get_local_rev(self._dist_name, self._orig_name)
-        self._deb_rev = max(repo_rev, local_rev)
+        self._deb_rev = max(repo_rev, local_rev) + 1
         self._version = '%s-%d' % (self._upstream_version, self._deb_rev)
         self._package_name = '%s_%s'%(self._module_name, self._version)
         self._src_dir = os.path.join(BUILD_DIR, self._src_name)
@@ -266,34 +266,33 @@ class DebBuild:
 
 
     def build_tarball(self):
-
-        # Exception for meta package
-        if self._module == 'desktop':
-            return self._log_end()
-
         orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._orig_name)
         orig_results = '%s/%s/%s.orig.tar.gz'%(RESULTS_DIR, self._dist_name, self._orig_name)
 
         def prepare_src():
-            self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
+            if os.path.isfile(orig_path):
+                self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
+            else:
+                if not os.path.isfile(self._src_dir):
+                    os.mkdir(self._src_dir)
             self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
             shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
 
         def make_tarball():
             self._log(" Building the source tarball:", True)
-            for cmd in packages[self._branch][self._module][2]:
-                if not self._run (cmd, log=True, cwd=self._module_dir):
-                    return self._log_end("Cannot build the tarball", 'tarball')
-            # copy the tarball in BUILD_DIR
-            tarball_path = os.path.join(self._module_dir, self._src_name+'.tar.gz')
-            self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
-            os.rename(tarball_path, orig_path)
-            save(self._results_dir , ['orig.tar.gz'])
+            if self._src_folder is not '':
+                for cmd in packages[self._branch][self._module][2]:
+                    if not self._run (cmd, log=True, cwd=self._module_dir):
+                        return self._log_end("Cannot build the tarball", 'tarball')
+                # copy the tarball in BUILD_DIR
+                tarball_path = os.path.join(self._module_dir, self._src_name+'.tar.gz')
+                self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
+                os.rename(tarball_path, orig_path)
+                save(self._results_dir , ['orig.tar.gz'])
             prepare_src()
 
         # force to make a release
         if self._do_release:
-            # TODO : retirer toutes les archives et remettre le deb_rev à 1
             make_tarball()
 
         # get the source on local disk
@@ -331,16 +330,15 @@ class DebBuild:
         # TODO: apply a patch system HERE
 
         # generate a changelog if we're releasing
-        if self._do_release or self._deb_rev is 1:
+        if self._do_release or self._deb_rev <= 1:
             cmd = ['dch', '--force-distribution', '-v', self._version,\
                    '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
             if not self._run(cmd, cwd=self._src_dir):
                 return self._log_end("Cannot generate a changelog", 'srcbuild')
-
-        if self._deb_rev <= 1:
             opt = "a"
         else:
             opt = "d"
+
         cmd = ['dpkg-buildpackage', '-S', '-s'+opt, '-us', '-uc']
         if self._run(cmd, cwd=self._src_dir):
             # hack to fix the debuild bug
