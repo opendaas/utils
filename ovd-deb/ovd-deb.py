@@ -80,7 +80,7 @@ def svn_up(branch):
     print "Updating the svn tree:",
     sys.stdout.flush()
     cwd = "%s/%s"%(SVN_BASE_DIR, branches[branch][0])
-    ret = run(['svn', 'up'], cwd=cwd, logfile="/tmp/log")
+    ret = run(['svn', 'up'], cwd=cwd)
     if ret: print "OK"
     else: print "FAILED"
 
@@ -88,11 +88,12 @@ def get_revno(svn_base):
     revno = pysvn.Client().info(svn_base)["revision"].number
     return "%05d"%revno
 
-def get_repo_rev(branch, package):
+def get_repo_rev(branch, package, revno):
     repo = branches[branch][1]
     if repo.find('ovd') is not -1:
         package = "ulteo-" + package
-    cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s'" % (SSH_CMD, repo, package)
+    cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s | grep %s'" \
+           % (SSH_CMD, repo, package, revno)
     result = os.popen(cmd).readline()
     if result == "":
         return 0
@@ -176,16 +177,19 @@ class DebBuild:
         self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
         self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
             branches[self._branch][3], debian_folder)
-        self._upstream_version = self._get_base_version()
 
-        self._orig_name = '%s_%s'%(self._module_name, self._upstream_version)
-        self._src_name = '%s-%s'%(self._module_name, self._upstream_version)
-        repo_rev = get_repo_rev(self._branch, self._module_name)
-        local_rev = get_local_rev(self._dist_name, self._orig_name)
+        self._upstream_version = self._get_base_version()
+        self._tarball_name = '%s-%s'%(self._module_name, self._upstream_version)
+        self._upstream_version = self._upstream_version.replace('trunk', '')
+
+        repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
+        local_rev = get_local_rev(self._dist_name, \
+                        '%s_%s'%(self._module_name, self._upstream_version))
+        print repo_rev, local_rev
         self._deb_rev = max(repo_rev, local_rev) + 1
         self._version = '%s-%d' % (self._upstream_version, self._deb_rev)
-        self._package_name = '%s_%s'%(self._module_name, self._version)
-        self._src_dir = os.path.join(BUILD_DIR, self._src_name)
+        self._src_name = '%s_%s'%(self._module_name, self._version)
+        self._src_dir = os.path.join(BUILD_DIR, self._tarball_name)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
 
         logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
@@ -266,8 +270,9 @@ class DebBuild:
 
 
     def build_tarball(self):
-        orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._orig_name)
-        orig_results = '%s/%s/%s.orig.tar.gz'%(RESULTS_DIR, self._dist_name, self._orig_name)
+        orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._src_name)
+        orig_results = '%s/%s/%s.orig.tar.gz' % \
+                       (RESULTS_DIR, self._dist_name, self._src_name)
 
         def prepare_src():
             if os.path.isfile(orig_path):
@@ -285,7 +290,7 @@ class DebBuild:
                     if not self._run (cmd, cwd=self._module_dir):
                         return self._log_end("Cannot build the tarball", 'tarball')
                 # copy the tarball in BUILD_DIR
-                tarball_path = os.path.join(self._module_dir, self._src_name+'.tar.gz')
+                tarball_path = os.path.join(self._module_dir, self._tarball_name+'.tar.gz')
                 self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
                 os.rename(tarball_path, orig_path)
                 save(self._results_dir , ['orig.tar.gz'])
@@ -298,13 +303,13 @@ class DebBuild:
         # get the source on local disk
         elif os.path.isfile(orig_results):
             self._log(" Getting the source tarball from disk:", True)
-            prev_rev = self._deb_rev-1
-            saved_files = glob.glob("%s/%s-%s*" %\
-                (self._results_dir, self._orig_name, prev_rev))
-            saved_files.append("%s/%s.orig.tar.gz"%(self._results_dir, self._orig_name))
+            saved_name = '%s_%s-d' % (self._module_name, \
+                                      self._upstream_version, self._deb_rev-1)
+            saved_files = glob.glob("%s/%s*" % (self._results_dir, saved_name))
+            saved_files.append("%s/%s.orig.tar.gz"%(self._results_dir, saved_name))
             for f in saved_files:
                 shutil.copy(f, BUILD_DIR)
-            dsc_file = "%s-%d.dsc"%(self._orig_name, prev_rev)
+            dsc_file = saved_name+'.dsc'
             if os.path.isfile(dsc_file):
                 self._run(['dpkg-source', '-x', dsc_file])
             else:
@@ -339,16 +344,16 @@ class DebBuild:
         if not self._run(cmd, cwd=self._src_dir):
             return self._log_end("Cannot generate a changelog", 'srcbuild')
 
-        if self._deb_rev <= 1:
-            opt = "a"
-        else:
-            opt = "d"
+        #if self._deb_rev <= 1:
+        opt = "a"
+        #else:
+        #    opt = "d"
 
         cmd = ['dpkg-buildpackage', '-S', '-s'+opt, '-us', '-uc']
         if self._run(cmd, cwd=self._src_dir):
             # hack to fix the debuild bug
             os.chdir(self._src_dir)
-            deb_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._package_name)
+            deb_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._src_name)
             os.system("dpkg-genchanges -S -s%s -DDistribution=%s > %s 2> /dev/null"%\
                        (opt, self._dist_name, deb_changes_file))
             save(self._results_dir , ['gz', 'dsc'])
@@ -364,14 +369,14 @@ class DebBuild:
             if not self.build_tarball():
                 return self._log_end("Cannot get the orig source", 'debbuild')
 
-        src_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._package_name)
+        src_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._src_name)
         if not os.path.exists(src_changes_file):
             if not self.build_source():
                 return self._log_end("Cannot build the source", 'debbuild')
 
         self._log(" Building the %s packages:"%arch, True)
 
-        dsc_file = '%s/%s-%s.dsc'%(BUILD_DIR, self._orig_name, self._deb_rev)
+        dsc_file = '%s/%s.dsc'%(BUILD_DIR, self._src_name)
         cmd = ['sbuild', '-n', '-A', '-c', 'hardy-'+arch,\
                '-d', self._dist_name, dsc_file]
         if glob.glob(BUILD_DIR + "/*_all.deb") != [] and arch != "all" :
@@ -472,6 +477,12 @@ if __name__ == '__main__':
         if publish:
             deb.publish()
         sumup[module] = deb.get_sumup()
+
+    if publish:
+        print '\n[Updating the OVD package list website]'
+        cmd = SSH_CMD.split(' ')
+        cmd.append("'/home/gauvain/bin/ovdweb.sh'")
+        run(cmd)
 
     text = '\n'
     for module in sumup.keys():
