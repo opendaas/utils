@@ -186,16 +186,16 @@ class DebBuild:
             branches[self._branch][3], debian_folder)
 
         self._upstream_version = self._get_base_version()
-        self._tarball_name = '%s-%s'%(self._module_name, self._upstream_version)
+        self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
         self._upstream_version = self._upstream_version.replace('trunk', '')
+        self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
 
         repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
-        local_rev = get_local_rev(self._dist_name, \
-                        '%s_%s'%(self._module_name, self._upstream_version))
+        local_rev = get_local_rev(self._dist_name, self._tarball_name)
         self._deb_rev = max(repo_rev, local_rev) + 1
         self._version = '%s-%d' % (self._upstream_version, self._deb_rev)
         self._src_name = '%s_%s'%(self._module_name, self._version)
-        self._src_dir = os.path.join(BUILD_DIR, self._tarball_name)
+        self._src_dir = os.path.join(BUILD_DIR, self._tarballname)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
 
         logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
@@ -271,8 +271,8 @@ class DebBuild:
 
     def build_tarball(self):
         orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._src_name)
-        orig_results = '%s/%s/%s.orig.tar.gz' % \
-                       (RESULTS_DIR, self._dist_name, self._src_name)
+        orig_results = glob.glob('%s/%s/%s-*.orig.tar.gz' % (RESULTS_DIR, \
+                        self._dist_name, self._tarball_name))
 
         def prepare_src():
             if os.path.isfile(orig_path):
@@ -290,7 +290,7 @@ class DebBuild:
                     if not self._run (cmd, cwd=self._module_dir):
                         return self._log_end("Cannot build the tarball", 'tarball')
                 # copy the tarball in BUILD_DIR
-                tarball_path = os.path.join(self._module_dir, self._tarball_name+'.tar.gz')
+                tarball_path = os.path.join(self._module_dir, self._tarballname+'.tar.gz')
                 self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
                 os.rename(tarball_path, orig_path)
                 save(self._results_dir , ['orig.tar.gz'])
@@ -301,17 +301,16 @@ class DebBuild:
             make_tarball()
 
         # get the source on local disk
-        elif os.path.isfile(orig_results):
+        elif orig_results:
             self._log(" Getting the source tarball from disk:", True)
-            saved_name = '%s_%s-d' % (self._module_name, \
-                                      self._upstream_version, self._deb_rev-1)
-            saved_files = glob.glob("%s/%s*" % (self._results_dir, saved_name))
-            saved_files.append("%s/%s.orig.tar.gz"%(self._results_dir, saved_name))
-            for f in saved_files:
+            deb_rev = max(orig_results).rpartition('-')[2].rpartition('.orig.tar.gz')[0]
+            result_name = '%s-%s' % (self._tarball_name, deb_rev)
+            result_files = glob.glob("%s/%s*" % (self._results_dir, result_name))
+            for f in result_files:
                 shutil.copy(f, BUILD_DIR)
-            dsc_file = saved_name+'.dsc'
+            dsc_file = result_name+'.dsc'
             if os.path.isfile(dsc_file):
-                self._run(['dpkg-source', '-x', dsc_file])
+                self._run(['dpkg-source', '-x', dsc_file, self._src_dir])
             else:
                 prepare_src()
 
