@@ -282,7 +282,7 @@ class DebBuild:
             self._log(" Building the source tarball:", True)
             if self._src_folder is not '':
                 for cmd in packages[self._branch][self._module][2]:
-                    if not self._run (cmd, log=True, cwd=self._module_dir):
+                    if not self._run (cmd, cwd=self._module_dir):
                         return self._log_end("Cannot build the tarball", 'tarball')
                 # copy the tarball in BUILD_DIR
                 tarball_path = os.path.join(self._module_dir, self._src_name+'.tar.gz')
@@ -297,10 +297,14 @@ class DebBuild:
 
         # get the source on local disk
         elif os.path.isfile(orig_results):
-            for f in glob.glob("%s/%s*"%(self._results_dir, self._orig_name)):
-                shutil.copy(f, BUILD_DIR)
             self._log(" Getting the source tarball from disk:", True)
-            dsc_file = "%s-%s.dsc"%(self._src_dir, self._deb_rev)
+            prev_rev = self._deb_rev-1
+            saved_files = glob.glob("%s/%s-%s*" %\
+                (self._results_dir, self._orig_name, prev_rev))
+            saved_files.append("%s/%s.orig.tar.gz"%(self._results_dir, self._orig_name))
+            for f in saved_files:
+                shutil.copy(f, BUILD_DIR)
+            dsc_file = "%s-%d.dsc"%(self._orig_name, prev_rev)
             if os.path.isfile(dsc_file):
                 self._run(['dpkg-source', '-x', dsc_file])
             else:
@@ -329,12 +333,13 @@ class DebBuild:
         os.system('rm -rf $(find %s -name .svn)'%self._src_dir)
         # TODO: apply a patch system HERE
 
-        # generate a changelog if we're releasing
-        if self._do_release or self._deb_rev <= 1:
-            cmd = ['dch', '--force-distribution', '-v', self._version,\
-                   '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
-            if not self._run(cmd, cwd=self._src_dir):
-                return self._log_end("Cannot generate a changelog", 'srcbuild')
+        # generate a changelog
+        cmd = ['dch', '--force-distribution', '-v', self._version,\
+               '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
+        if not self._run(cmd, cwd=self._src_dir):
+            return self._log_end("Cannot generate a changelog", 'srcbuild')
+
+        if self._deb_rev <= 1:
             opt = "a"
         else:
             opt = "d"
@@ -346,7 +351,7 @@ class DebBuild:
             deb_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._package_name)
             os.system("dpkg-genchanges -S -s%s -DDistribution=%s > %s 2> /dev/null"%\
                        (opt, self._dist_name, deb_changes_file))
-            save(self._results_dir , ['gz', 'dsc', 'changes'])
+            save(self._results_dir , ['gz', 'dsc'])
         else:
             return self._log_end("Cannot building the source package", 'srcbuild')
 
@@ -374,7 +379,7 @@ class DebBuild:
         if not self._run(cmd):
             return self._log_end("sbuild cannot make the package", 'debbuild')
 
-        save(self._results_dir , ['deb', 'changes'])
+        save(self._results_dir , ['deb'])
         return self._log_end()
 
 
@@ -409,11 +414,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # defaults options
-    release = True
-    # TODO: put release to False
-    publish = False
-    keeplog = False
-    on_stdout = False
+    release, publish, keeplog, on_stdout = False, False, False, False
     branch = DEFAULT_BRANCH
 
     for o, a in opts:
