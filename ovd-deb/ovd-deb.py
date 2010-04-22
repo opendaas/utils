@@ -161,12 +161,11 @@ def save(folder, ext):
 
 
 class DebBuild:
-    def __init__(self, module, branch=DEFAULT_BRANCH, release=False, on_stdout=False):
+    def __init__(self, module, branch=DEFAULT_BRANCH, on_stdout=False):
 
         # set all the variables we'll need
         self._module = module
         self._branch = branch
-        self._do_release = release
         self._on_stdout = on_stdout
 
         self._svn_base = '%s/%s'%(SVN_BASE_DIR, branches[self._branch][0])
@@ -190,10 +189,10 @@ class DebBuild:
         self._upstream_version = self._upstream_version.replace('trunk', '')
         self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
 
-        repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
+        self._repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
         local_rev = get_local_rev(self._dist_name, self._tarball_name)
-        self._deb_rev = max(repo_rev, local_rev) + 1
-        self._version = '%s-%d' % (self._upstream_version, self._deb_rev)
+        self._version = '%s-%d' % (self._upstream_version, \
+                                   max(self._repo_rev, local_rev) + 1)
         self._src_name = '%s_%s'%(self._module_name, self._version)
         self._src_dir = os.path.join(BUILD_DIR, self._tarballname)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
@@ -270,20 +269,24 @@ class DebBuild:
 
 
     def build_tarball(self):
-        orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._src_name)
-        orig_results = glob.glob('%s/%s/%s-*.orig.tar.gz' % (RESULTS_DIR, \
-                        self._dist_name, self._tarball_name))
+        orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._tarball_name)
+        orig_result = '%s/%s/%s.orig.tar.gz' % (RESULTS_DIR, self._dist_name, self._tarball_name)
 
-        def prepare_src():
-            if os.path.isfile(orig_path):
-                self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
+        # get the source on local disk
+        if os.path.exists(orig_result):
+            self._log(" Getting the source tarball from disk:", True)
+            shutil.copy(orig_result, BUILD_DIR)
+
+        # TODO: get the source on repository
+        elif False:
+            self._log(" Getting the source tarball from repo:", True)
+            if self._run(['apt-get', 'source', self._module_name]):
+                save(self._results_dir , ['gz', 'dsc'])
             else:
-                if not os.path.isfile(self._src_dir):
-                    os.mkdir(self._src_dir)
-            self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
-            shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
+                return self._log_end("The source tarball is not found", 'tarball')
 
-        def make_tarball():
+        # make the tarball
+        else:
             self._log(" Building the source tarball:", True)
             if self._src_folder is not '':
                 for cmd in packages[self._branch][self._module][2]:
@@ -294,38 +297,15 @@ class DebBuild:
                 self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
                 os.rename(tarball_path, orig_path)
                 save(self._results_dir , ['orig.tar.gz'])
-            prepare_src()
 
-        # force to make a release
-        if self._do_release:
-            make_tarball()
-
-        # get the source on local disk
-        elif orig_results:
-            self._log(" Getting the source tarball from disk:", True)
-            deb_rev = max(orig_results).rpartition('-')[2].rpartition('.orig.tar.gz')[0]
-            result_name = '%s-%s' % (self._tarball_name, deb_rev)
-            result_files = glob.glob("%s/%s*" % (self._results_dir, result_name))
-            for f in result_files:
-                shutil.copy(f, BUILD_DIR)
-            dsc_file = result_name+'.dsc'
-            if os.path.isfile(dsc_file):
-                self._run(['dpkg-source', '-x', dsc_file, self._src_dir])
-            else:
-                prepare_src()
-
-        # get the source on repo if svn rev/repo are equal
-        # TODO: improve this part
-        elif False:
-            self._log(" Getting the source tarball from repo:", True)
-            if self._run(['apt-get', 'source', self._module_name]):
-                save(self._results_dir , ['gz', 'dsc'])
-            else:
-                return self._log_end("The source tarball is not found", 'tarball')
-
-        # make a release in any other cases
+        # prepare the src folder
+        if os.path.isfile(orig_path):
+            self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
         else:
-            make_tarball()
+            if not os.path.isfile(self._src_dir):
+                os.mkdir(self._src_dir)
+        self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
+        shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
 
         return self._log_end()
 
@@ -343,18 +323,18 @@ class DebBuild:
         if not self._run(cmd, cwd=self._src_dir):
             return self._log_end("Cannot generate a changelog", 'srcbuild')
 
-        #if self._deb_rev <= 1:
-        opt = "a"
-        #else:
-        #    opt = "d"
+        if self._repo_rev is 0:
+            orig_opt = '-sa'
+        else:
+            orig_opt = '-sd'
 
-        cmd = ['dpkg-buildpackage', '-S', '-s'+opt, '-us', '-uc']
+        cmd = ['dpkg-buildpackage', '-S', '-us', '-uc', orig_opt]
         if self._run(cmd, cwd=self._src_dir):
             # hack to fix the debuild bug
             os.chdir(self._src_dir)
             deb_changes_file = '%s/%s_source.changes'%(BUILD_DIR, self._src_name)
-            os.system("dpkg-genchanges -S -s%s -DDistribution=%s > %s 2> /dev/null"%\
-                       (opt, self._dist_name, deb_changes_file))
+            os.system("dpkg-genchanges -S %s -DDistribution=%s > %s 2> /dev/null" %\
+                       (orig_opt, self._dist_name, deb_changes_file))
             save(self._results_dir , ['gz', 'dsc'])
         else:
             return self._log_end("Cannot building the source package", 'srcbuild')
@@ -412,13 +392,13 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                            'okrpb:',
-                          ['stdout', 'keeplog', 'release', 'publish', 'branch'])
+                          ['stdout', 'keeplog', 'publish', 'branch'])
     except getopt.GetoptError, err:
         print >> sys.stderr, 'Error parsing the command line'
         sys.exit(1)
 
     # defaults options
-    release, publish, keeplog, on_stdout = False, False, False, False
+    publish, keeplog, on_stdout = False, False, False
     branch = DEFAULT_BRANCH
 
     for o, a in opts:
@@ -430,8 +410,6 @@ if __name__ == '__main__':
             else:
                 print 'Unknown branch: %s'%a
                 sys.exit(1)
-        if o in ('-r', '--release'):
-            release = True
         if o in ('-k', '--keeplog'):
             keeplog = True
         if o in ('-o', '--stdout'):
@@ -470,7 +448,7 @@ if __name__ == '__main__':
         print '\nBuild started for module %s (%s)' %\
             (packages[branch][module][1], branches[branch][0])
 
-        deb = DebBuild(module, branch, release, on_stdout)
+        deb = DebBuild(module, branch, on_stdout)
         for arch in packages[branch][module][3]:
             deb.build_deb(arch)
         if publish:
