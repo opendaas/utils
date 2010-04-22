@@ -76,11 +76,10 @@ SSH_CMD = 'ssh gauvain@firex.ulteo.com -p 222'
 
 sumup = {}
 
-def svn_up(branch):
-    print "Updating the svn tree:",
+def update_system(cmd, msg, ssh=False):
+    print "Updating the %s:"%(msg),
     sys.stdout.flush()
-    cwd = "%s/%s"%(SVN_BASE_DIR, branches[branch][0])
-    ret = run(['svn', 'up'], cwd=cwd)
+    ret = run(cmd, ssh=ssh)
     if ret: print "OK"
     else: print "FAILED"
 
@@ -277,12 +276,13 @@ class DebBuild:
             self._log(" Getting the source tarball from disk:", True)
             shutil.copy(orig_result, BUILD_DIR)
 
-        # TODO: get the source on repository
-        elif False:
+        # get the source on repository
+        elif self._repo_rev is not 0:
             self._log(" Getting the source tarball from repo:", True)
-            if self._run(['apt-get', 'source', self._module_name]):
-                save(self._results_dir , ['gz', 'dsc'])
-            else:
+            self._run(['apt-get', 'source', '-d', '%s=%s' % \
+                      (self._module_name, self._upstream_version)])
+            save(self._results_dir , ['gz', 'dsc'])
+            if not os.path.isfile(orig_path):
                 return self._log_end("The source tarball is not found", 'tarball')
 
         # make the tarball
@@ -438,7 +438,8 @@ if __name__ == '__main__':
         time.sleep(5)
     open(LOCK_FILE, 'w').close()
 
-    svn_up(branch)
+    update_system(['sudo', 'apt-get', 'update'], "apt cache packaging")
+    update_system(['svn', 'up'], "subversion repository")
 
     for module in to_build:
         shutil.rmtree(BUILD_DIR, True)
@@ -456,8 +457,8 @@ if __name__ == '__main__':
         sumup[module] = deb.get_sumup()
 
     if publish:
-        print '\n[Updating the OVD package list website]'
-        run(['/home/gauvain/bin/ovdweb.sh'], ssh=True)
+        print
+        update_system(['/home/gauvain/bin/ovdweb.sh'], "OVD package website", ssh=True)
 
     text = '\n'
     for module in sumup.keys():
