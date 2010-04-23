@@ -71,15 +71,16 @@ LOCK_FILE = BASE_DIR+'/.locked'
 LOGS_DIR = BASE_DIR+'/logs'
 BUILD_DIR = BASE_DIR+'/build'
 RESULTS_DIR = BASE_DIR+'/results'
+PATCH_DIR = BASE_DIR+'/patches'
 SVN_BASE_DIR = '/home/samuel/svn'
 SSH_CMD = 'ssh gauvain@firex.ulteo.com -p 222'
 
 sumup = {}
 
-def update_system(cmd, msg, ssh=False):
-    print "Updating the %s:"%(msg),
+def display_cmd(cmd, msg, ssh=False):
+    print "%s:"%msg,
     sys.stdout.flush()
-    ret = run(cmd, ssh=ssh)
+    ret = run(cmd, ssh=ssh, logfile=os.path.join(LOGS_DIR, 'cmd_logs'))
     if ret: print "OK"
     else: print "FAILED"
 
@@ -155,7 +156,7 @@ def save(folder, ext):
     if not os.path.isdir(folder):
         os.makedirs(folder)
     for ext in ext:
-        for f in glob.glob("%s/*.%s"%(BUILD_DIR, ext)):
+        for f in glob.glob("%s/*%s"%(BUILD_DIR, ext)):
             shutil.copy(f, folder)
 
 
@@ -167,7 +168,7 @@ class DebBuild:
         self._branch = branch
         self._on_stdout = on_stdout
 
-        self._svn_base = '%s/%s'%(SVN_BASE_DIR, branches[self._branch][0])
+        self._svn_base = os.path.join(SVN_BASE_DIR, branches[self._branch][0])
         self._revno = get_revno(self._svn_base)
 
         self._dist_name = branches[self._branch][1]
@@ -268,8 +269,22 @@ class DebBuild:
 
 
     def build_tarball(self):
-        orig_path = '%s/%s.orig.tar.gz'%(BUILD_DIR, self._tarball_name)
-        orig_result = '%s/%s/%s.orig.tar.gz' % (RESULTS_DIR, self._dist_name, self._tarball_name)
+        orig_name = self._tarball_name+'.orig.tar.gz'
+        orig_path = os.path.join(BUILD_DIR, orig_name)
+        orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
+        tarball_name = self._tarballname+'.tar.gz'
+        tarball_path = os.path.join(self._module_dir, tarball_name)
+
+        def make_tarball(name=None):
+            for cmd in packages[self._branch][self._module][2]:
+                if not self._run (cmd, cwd=self._module_dir):
+                    return self._log_end("Cannot build the tarball", 'tarball')
+            shutil.move(tarball_path, BUILD_DIR)
+            if name:
+                os.rename(tarball_path, name)
+                save(self._results_dir , [name])
+            else:
+                save(self._results_dir , [orig_name])
 
         # get the source on local disk
         if os.path.exists(orig_result):
@@ -282,32 +297,49 @@ class DebBuild:
             self._run(['apt-get', 'source', '-d', '%s=%s' % \
                       (self._module_name, self._upstream_version)])
             save(self._results_dir , ['gz', 'dsc'])
-            if not os.path.isfile(orig_path):
-                return self._log_end("The source tarball is not found", 'tarball')
 
         # make the tarball
         else:
             self._log(" Building the source tarball:", True)
             if self._src_folder is not '':
-                for cmd in packages[self._branch][self._module][2]:
-                    if not self._run (cmd, cwd=self._module_dir):
-                        return self._log_end("Cannot build the tarball", 'tarball')
-                # copy the tarball in BUILD_DIR
-                tarball_path = os.path.join(self._module_dir, self._tarballname+'.tar.gz')
-                self._log("os.rename(%s,%s)"%(tarball_path, orig_path))
-                os.rename(tarball_path, orig_path)
-                save(self._results_dir , ['orig.tar.gz'])
+                make_tarball(orig_name)
 
-        # prepare the src folder
-        if os.path.isfile(orig_path):
+        self._log_end()
+
+        # apply patches
+        self._patches = glob.glob('%s/%s_%s_*' % (PATCH_DIR, branch, module))
+        series_path = os.path.join(PATCH_DIR, 'series')
+        pc_path = os.path.join(self._svn_base, '.pc')
+        if os.path.exists(series_path):
+            os.unlink(series_path)
+        if os.path.exists(pc_path):
+            shutil.rmtree(pc_path, True)
+        if self._patches:
+            self._log(" Apply %d patches:"%(len(self._patches)), True)
+            for patch in self._patches:
+                self._run(['quilt', 'import', '-p0',\
+                           'patches/'+patch.rpartition('/')[2]], cwd=BASE_DIR)
+            if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
+                              'push', '-a'], cwd=self._svn_base):
+                return self._log_end("Cannot apply patches", 'tarball')
+            make_tarball()
+            self._log_end()
+
+        # extract sources
+        tarball_path = os.path.join(BUILD_DIR, tarball_name)
+        if os.path.isfile(tarball_path):
+            self._run (['tar', 'zxf', tarball_path, '-C', BUILD_DIR])
+        elif os.path.isfile(orig_path):
             self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
         else:
             if not os.path.isfile(self._src_dir):
                 os.mkdir(self._src_dir)
+
+        # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
         shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
 
-        return self._log_end()
+        return True
 
 
     def build_source(self):
@@ -315,7 +347,6 @@ class DebBuild:
         self._log(" Building the source package:", True)
 
         os.system('rm -rf $(find %s -name .svn)'%self._src_dir)
-        # TODO: apply a patch system HERE
 
         # generate a changelog
         cmd = ['dch', '--force-distribution', '-v', self._version,\
@@ -362,6 +393,12 @@ class DebBuild:
             cmd.remove('-A')
         if not self._run(cmd):
             return self._log_end("sbuild cannot make the package", 'debbuild')
+
+        # remove patches
+        if self._patches:
+            if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
+                              'pop', '-a'], cwd=self._svn_base):
+                return self._log_end("Cannot remove patches", 'tarball')
 
         save(self._results_dir , ['deb'])
         return self._log_end()
@@ -438,8 +475,16 @@ if __name__ == '__main__':
         time.sleep(5)
     open(LOCK_FILE, 'w').close()
 
-    update_system(['sudo', 'apt-get', 'update'], "apt cache packaging")
-    update_system(['svn', 'up'], "subversion repository")
+    quilt_file = os.path.join(BASE_DIR, '.quiltrc')
+    f = open(quilt_file, 'w')
+    f.write("QUILT_PATCHES=%s/patches\n"%BASE_DIR)
+    f.close()
+
+    run(['sudo', '-v'])
+    display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
+    svn_base = os.path.join(SVN_BASE_DIR, branches[branch][0])
+    display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
+    display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 
     for module in to_build:
         shutil.rmtree(BUILD_DIR, True)
@@ -458,7 +503,8 @@ if __name__ == '__main__':
 
     if publish:
         print
-        update_system(['/home/gauvain/bin/ovdweb.sh'], "OVD package website", ssh=True)
+        display_cmd(['/home/gauvain/bin/ovdweb.sh'], \
+                       "Update the OVD package website", ssh=True)
 
     text = '\n'
     for module in sumup.keys():
