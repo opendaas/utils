@@ -46,23 +46,23 @@ ALL_ARCH = ['all']
 # { tagname : [self._src_folder, self._module_name, command, arch]}
 packages = {
     'ovd25':{
-        'java'     : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
-        'sm'       : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'aps'      : ['ApplicationServer', 'ovd-application-server', AUTOTOOLS_CMD, ANY_ARCH],
-        'chroot'   : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
+        'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
+        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
+        'aps'     : ['ApplicationServer', 'ovd-application-server', AUTOTOOLS_CMD, ANY_ARCH],
+        'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
     },
     'ovd3':{
-        'sm'       : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'web'      : ['WebInterface', 'ovd-webinterface', AUTOTOOLS_CMD, ALL_ARCH],
-        'chroot'   : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
-        'shell'    : ['ApplicationServer/OvdShells', 'ovd-shells', PYTHON_CMD, ALL_ARCH],
-        'slave'     : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
-        'java'     : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
-        'settings' : ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ALL_ARCH],
-        'desktop'  : ['', 'ovd-desktop', '', ALL_ARCH],
+        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
+        'web'     : ['WebInterface', 'ovd-webinterface', AUTOTOOLS_CMD, ALL_ARCH],
+        'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
+        'shell'   : ['ApplicationServer/OvdShells', 'ovd-shells', PYTHON_CMD, ALL_ARCH],
+        'slave'   : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
+        'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
+        'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ALL_ARCH],
+        'desktop' : ['meta', 'ovd-desktop', '', ALL_ARCH],
     },
     'xrdp':{
-        'xrdp'    : ['',            'xrdp',        AUTOTOOLS_CMD, ANY_ARCH],
+        'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
     }
 }
 
@@ -305,7 +305,7 @@ class DebBuild:
         # make the tarball
         else:
             self._log(" Building the source tarball:", True)
-            if self._src_folder is not '':
+            if self._src_folder is not 'meta':
                 orig_path = make_tarball(orig_name)
 
         self._log_end()
@@ -486,7 +486,7 @@ if __name__ == '__main__':
     run(['sudo', '-v'])
     display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
     svn_base = os.path.join(SVN_BASE_DIR, branches[branch][0])
-    display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
+    #display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
     display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 
     for module in to_build:
