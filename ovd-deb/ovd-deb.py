@@ -270,21 +270,25 @@ class DebBuild:
 
     def build_tarball(self):
         orig_name = self._tarball_name+'.orig.tar.gz'
-        orig_path = os.path.join(BUILD_DIR, orig_name)
-        orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
         tarball_name = self._tarballname+'.tar.gz'
-        tarball_path = os.path.join(self._module_dir, tarball_name)
+        orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
+        orig_path = None
+        tarball_path = None
 
         def make_tarball(name=None):
             for cmd in packages[self._branch][self._module][2]:
                 if not self._run (cmd, cwd=self._module_dir):
                     return self._log_end("Cannot build the tarball", 'tarball')
-            shutil.move(tarball_path, BUILD_DIR)
+            shutil.move(os.path.join(self._module_dir, tarball_name), BUILD_DIR)
             if name:
-                os.rename(tarball_path, name)
-                save(self._results_dir , [name])
+                path = os.path.join(BUILD_DIR, tarball_name)
+                self._log("os.rename(%s, %s)"%(path, name))
+                os.rename(path, name)
+                save(self._results_dir , name)
+                return path
             else:
-                save(self._results_dir , [orig_name])
+                save(self._results_dir , tarball_name)
+                return os.path.join(BUILD_DIR, tarball_name)
 
         # get the source on local disk
         if os.path.exists(orig_result):
@@ -302,7 +306,7 @@ class DebBuild:
         else:
             self._log(" Building the source tarball:", True)
             if self._src_folder is not '':
-                make_tarball(orig_name)
+                orig_path = make_tarball(orig_name)
 
         self._log_end()
 
@@ -322,14 +326,13 @@ class DebBuild:
             if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
                               'push', '-a'], cwd=self._svn_base):
                 return self._log_end("Cannot apply patches", 'tarball')
-            make_tarball()
+            tarball_path = make_tarball()
             self._log_end()
 
         # extract sources
-        tarball_path = os.path.join(BUILD_DIR, tarball_name)
-        if os.path.isfile(tarball_path):
+        if tarball_path is not None and os.path.isfile(tarball_path):
             self._run (['tar', 'zxf', tarball_path, '-C', BUILD_DIR])
-        elif os.path.isfile(orig_path):
+        elif orig_path is not None and os.path.isfile(orig_path):
             self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
         else:
             if not os.path.isfile(self._src_dir):
