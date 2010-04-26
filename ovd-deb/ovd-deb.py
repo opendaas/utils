@@ -27,53 +27,7 @@ from subprocess import Popen, STDOUT, PIPE
 import glob
 import atexit
 import pysvn
-
-DEFAULT_BRANCH = 'ovd3'
-# { tagname : [ svn_repository, repo_target, file_base_version], debian_folder }
-branches = {
-    'ovd25'  : ['ovd/branches/2.5', '2.5-staging', 'SessionManager/configure.in.in', 'debian'],
-    'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', 'debian'],
-    'xrdp'  : ['xrdp/trunk', 'trunk', 'configure.ac.in', ''],
-}
-
-AUTOTOOLS_CMD = [['./autogen.sh'], ['make', 'distcheck']]
-ANT_CMD = [['./bootstrap'], ['ant', 'dist']]
-PYTHON_CMD = [['./autogen.py'], ['python', 'setup.py', 'sdist', '--dist-dir=.']]
-
-ANY_ARCH = ['amd64', 'i386']
-ALL_ARCH = ['all']
-
-# { tagname : [self._src_folder, self._module_name, command, arch]}
-packages = {
-    'ovd25':{
-        'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
-        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'aps'     : ['ApplicationServer', 'ovd-application-server', AUTOTOOLS_CMD, ANY_ARCH],
-        'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
-    },
-    'ovd3':{
-        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'web'     : ['WebInterface', 'ovd-webinterface', AUTOTOOLS_CMD, ALL_ARCH],
-        'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
-        'shell'   : ['ApplicationServer/OvdShells', 'ovd-shells', PYTHON_CMD, ALL_ARCH],
-        'slave'   : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
-        'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
-        'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ALL_ARCH],
-        'desktop' : ['meta', 'ovd-desktop', '', ALL_ARCH],
-    },
-    'xrdp':{
-        'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
-    }
-}
-
-BASE_DIR = '/home/samuel/ovd-deb'
-LOCK_FILE = BASE_DIR+'/.locked'
-LOGS_DIR = BASE_DIR+'/logs'
-BUILD_DIR = BASE_DIR+'/build'
-RESULTS_DIR = BASE_DIR+'/results'
-PATCH_DIR = BASE_DIR+'/patches'
-SVN_BASE_DIR = '/home/samuel/svn'
-SSH_CMD = 'ssh gauvain@firex.ulteo.com -p 222'
+from ovdprefs import *
 
 sumup = {}
 
@@ -89,7 +43,7 @@ def get_revno(svn_base):
     return "%05d"%revno
 
 def get_repo_rev(branch, package, revno):
-    repo = branches[branch][1]
+    repo = BRANCHES[branch][1]
     if repo.find('ovd') is not -1:
         package = "ulteo-" + package
     cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s | grep %s'" \
@@ -168,12 +122,12 @@ class DebBuild:
         self._branch = branch
         self._on_stdout = on_stdout
 
-        self._svn_base = os.path.join(SVN_BASE_DIR, branches[self._branch][0])
+        self._svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[self._branch][0])
         self._revno = get_revno(self._svn_base)
 
-        self._dist_name = branches[self._branch][1]
-        self._src_folder = packages[self._branch][self._module][0]
-        self._module_name = packages[self._branch][self._module][1]
+        self._dist_name = BRANCHES[self._branch][1]
+        self._src_folder = PACKAGES[self._branch][self._module][0]
+        self._module_name = PACKAGES[self._branch][self._module][1]
 
         if branch != 'xrdp':
             debian_folder = self._module_name
@@ -182,7 +136,7 @@ class DebBuild:
 
         self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
         self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
-            branches[self._branch][3], debian_folder)
+            BRANCHES[self._branch][3], debian_folder)
 
         self._upstream_version = self._get_base_version()
         self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
@@ -241,7 +195,7 @@ class DebBuild:
         minor_re = re.compile(r'^m4_define.*_version_minor.*\[([^\[]*)].*')
         build_re = re.compile(r'^m4_define.*_version_build.*\[([^\[]*)].*')
 
-        lines = open(os.path.join(self._svn_base, branches[self._branch][2]))\
+        lines = open(os.path.join(self._svn_base, BRANCHES[self._branch][2]))\
                     .readlines()[:3]
         try:
             major = major_re.search(lines[0]).group(1)
@@ -276,7 +230,7 @@ class DebBuild:
         tarball_path = None
 
         def make_tarball(name=None):
-            for cmd in packages[self._branch][self._module][2]:
+            for cmd in PACKAGES[self._branch][self._module][2]:
                 if not self._run (cmd, cwd=self._module_dir):
                     return self._log_end("Cannot build the tarball", 'tarball')
             shutil.move(os.path.join(self._module_dir, tarball_name), BUILD_DIR)
@@ -445,7 +399,7 @@ if __name__ == '__main__':
         if o in ('-p', '--publish'):
             publish = True
         if o in ('-b', '--branch'):
-            if branches.has_key(a):
+            if BRANCHES.has_key(a):
                 branch = a
             else:
                 print 'Unknown branch: %s'%a
@@ -456,11 +410,11 @@ if __name__ == '__main__':
             on_stdout = True
 
     if len(args) < 1:
-        to_build = packages[branch].keys()
+        to_build = PACKAGES[branch].keys()
     else:
         to_build = []
         for k in args:
-            if packages[branch].has_key(k):
+            if PACKAGES[branch].has_key(k):
                 to_build.append(k)
             else:
                 print 'Unknown module: %s\n'%k
@@ -485,7 +439,7 @@ if __name__ == '__main__':
 
     run(['sudo', '-v'])
     display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
-    svn_base = os.path.join(SVN_BASE_DIR, branches[branch][0])
+    svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[branch][0])
     #display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
     display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 
@@ -495,10 +449,10 @@ if __name__ == '__main__':
         os.chdir(BUILD_DIR)
 
         print '\nBuild started for module %s (%s)' %\
-            (packages[branch][module][1], branches[branch][0])
+            (PACKAGES[branch][module][1], BRANCHES[branch][0])
 
         deb = DebBuild(module, branch, on_stdout)
-        for arch in packages[branch][module][3]:
+        for arch in PACKAGES[branch][module][3]:
             deb.build_deb(arch)
         if publish:
             deb.publish()
