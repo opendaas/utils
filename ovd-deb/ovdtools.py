@@ -17,55 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, sys
-import glob, shutil, pysvn
+import glob, shutil
 from subprocess import Popen, STDOUT
 
 from ovdprefs import *
-
-def display_cmd(cmd, msg, ssh=False):
-    print "%s:"%msg,
-    sys.stdout.flush()
-    ret = run(cmd, ssh=ssh, logfile=os.path.join(LOGS_DIR, 'cmd_logs'))
-    if ret: print "OK"
-    else: print "FAILED"
-
-def get_revno(svn_base):
-    revno = pysvn.Client().info(svn_base)["revision"].number
-    return "%05d"%revno
-
-def get_repo_rev(branch, package, revno):
-    repo = BRANCHES[branch][1]
-    if repo.find('ovd') is not -1:
-        package = "ulteo-" + package
-    cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s | grep %s'" \
-           % (SSH_CMD, repo, package, revno)
-    result = os.popen(cmd).readline()
-    if result == "":
-        return 0
-    result = result.split()[2]
-    i = result.find('svn')+3
-    repo_no = result[i:i+5]
-    try:
-        return int(result.rpartition('-')[2])
-    except:
-        return 0
-
-def get_local_rev(branch, package):
-    rev = 0
-    for f in glob.glob("%s/%s/%s-*.dsc"%(RESULTS_DIR, branch, package)):
-        rev = max (rev, int(f.rpartition('-')[2].rpartition('.dsc')[0]))
-    return rev
-
-def is_deb_built():
-    cmd = "ls %s/*.deb"%BUILD_DIR
-    result = os.popen(cmd).readline()
-    if result == "":
-        return False
-    else:
-        return True
-
-def cleanup():
-    os.unlink(LOCK_FILE)
 
 def run(args, logfile=None, cwd=None, ssh=False):
 

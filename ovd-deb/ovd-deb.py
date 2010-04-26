@@ -20,8 +20,15 @@ import os, sys
 import getopt, atexit, time, shutil
 
 from ovdprefs import *
-from ovdtools import *
 from ovdebuild import ovdebuild
+from ovdtools import run
+
+def display_cmd(cmd, msg, ssh=False):
+    print "%s:"%msg,
+    sys.stdout.flush()
+    ret = run(cmd, ssh=ssh, logfile=os.path.join(LOGS_DIR, 'cmd_logs'))
+    if ret: print "OK"
+    else: print "FAILED"
 
 try:
     opts, args = getopt.getopt(sys.argv[1:],
@@ -65,6 +72,8 @@ if len(to_build) == 0:
     print 'Nothing to build.'
     sys.exit(0)
 
+def cleanup():
+    os.unlink(LOCK_FILE)
 atexit.register(cleanup)
 
 while os.path.isfile(LOCK_FILE):

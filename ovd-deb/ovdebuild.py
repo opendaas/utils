@@ -18,11 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, re
-import time, shutil
+import os, sys, re
+import glob, time, shutil, pysvn
 
 from ovdprefs import *
-from ovdtools import *
+from ovdtools import run, save
 
 class ovdebuild:
 
@@ -34,7 +34,8 @@ class ovdebuild:
         self._on_stdout = on_stdout
 
         self._svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[self._branch][0])
-        self._revno = get_revno(self._svn_base)
+        self._revno = "%05d" % \
+            pysvn.Client().info(self._svn_base)["revision"].number
 
         self._dist_name = BRANCHES[self._branch][1]
         self._src_folder = PACKAGES[self._branch][self._module][0]
@@ -54,8 +55,8 @@ class ovdebuild:
         self._upstream_version = self._upstream_version.replace('trunk', '')
         self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
 
-        self._repo_rev = get_repo_rev(self._branch, self._module_name, self._revno)
-        local_rev = get_local_rev(self._dist_name, self._tarball_name)
+        self._repo_rev = self._get_repo_rev()
+        local_rev = self._get_local_rev()
         self._version = '%s-%d' % (self._upstream_version, \
                                    max(self._repo_rev, local_rev) + 1)
         self._src_name = '%s_%s'%(self._module_name, self._version)
@@ -73,6 +74,7 @@ class ovdebuild:
 
         self._log(" Version release: %s\n"%self._version, True)
 
+
     def _log(self, msg, out=False):
         if out:
             print msg,
@@ -83,6 +85,7 @@ class ovdebuild:
             f.write(msg+'\n')
             f.close()
 
+
     def _log_end(self, msg=None, sumup=None):
         if msg is None:
             print 'OK'
@@ -92,6 +95,7 @@ class ovdebuild:
             print 'FAILED - '+msg
             return False
 
+
     def _run(self, args, log=True, cwd=BUILD_DIR, ssh=False):
         if log:
             if not self._on_stdout:
@@ -100,6 +104,7 @@ class ovdebuild:
                 return run(args, -1, cwd, ssh=ssh)
         else:
             return run(args, cwd=cwd)
+
 
     def _get_base_version(self):
         major_re = re.compile(r'^m4_define.*_version_major.*\[([^\[]*)].*')
@@ -121,6 +126,7 @@ class ovdebuild:
         except:
             return None
 
+
     def _get_changelog_version(self):
         changelog = '%s/changelog' % self._svn_deb_dir
         f = open(changelog)
@@ -131,6 +137,33 @@ class ovdebuild:
             return r.search(line).group('version')
         except:
             return None
+
+
+    def _get_repo_rev(self):
+        repo = BRANCHES[self._branch][1]
+        package = self._module_name
+        if repo.find('ovd') is not -1:
+            package = "ulteo-" + package
+        cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s | grep %s'" \
+               % (SSH_CMD, repo, package, self._revno)
+        result = os.popen(cmd).readline()
+        if result == "":
+            return 0
+        result = result.split()[2]
+        i = result.find('svn')+3
+        repo_no = result[i:i+5]
+        try:
+            return int(result.rpartition('-')[2])
+        except:
+            return 0
+
+
+    def _get_local_rev(self):
+        rev = 0
+        for f in glob.glob("%s/%s/%s-*.dsc" % \
+            (RESULTS_DIR, self._dist_name, self._tarball_name)):
+            rev = max (rev, int(f.rpartition('-')[2].rpartition('.dsc')[0]))
+        return rev
 
 
     def build_tarball(self):
