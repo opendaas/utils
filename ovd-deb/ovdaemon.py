@@ -34,11 +34,11 @@ class PRec(ProcessEvent):
 
 if __name__ == "__main__":
 	jobs = Queue.Queue()
-	
+
 	wm = WatchManager()
 	th_inotify = ThreadedNotifier(wm)
 	th_inotify.start()
-	
+
 	d = wm.add_watch(path=os.path.join(spool_dir, 'incoming'), mask=EventsCodes.IN_CLOSE_WRITE, proc_fun=PRec(jobs),rec=False,auto_add=False)
 
 	while True:
@@ -51,6 +51,6 @@ if __name__ == "__main__":
 		#print ret
 		job_file = a_job[2]
 		job_done = os.path.join(spool_dir, 'done', os.path.basename(job_file))
-		
+
 		os.rename(job_file, job_done)
 		print "job done"
