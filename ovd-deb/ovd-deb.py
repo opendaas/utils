@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010 Samuel Bovée <samuel@ulteo.com>
@@ -17,7 +18,6 @@
 
 import os, sys
 import getopt, atexit, time, shutil
-import pysvn
 
 from ovdprefs import *
 from ovdtools import *
