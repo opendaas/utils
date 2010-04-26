@@ -9,6 +9,7 @@ import os,logging,pwd
 from pyinotify import ProcessEvent
 from pyinotify import ThreadedNotifier, WatchManager
 from pyinotify import ProcessEvent, EventsCodes
+from ovdaemon import *
 
 spool_dir = os.path.join('/', 'tmp','packages')
 
@@ -43,8 +44,8 @@ if __name__ == "__main__":
 
 	while True:
 		a_job = jobs.get()
-		cmd = 'python /home/gauvain/ovddebs/ovd-deb-package.py -b %s %s'%(a_job[0], a_job[1])
-		#cmd = 'python /home/gauvain/ovddebs/ovd-deb-package.py --publish -b %s %s'%(a_job[0], a_job[1])
+		#cmd = 'python /home/gauvain/ovddebs/ovd-deb-package.py -b %s %s'%(a_job[0], a_job[1])
+		cmd = 'python %s --publish --branch %s %s'%(os.path.join(BASE_DIR,'ovd-deb.py'), a_job[0], a_job[1])
 		#print "start ",a_job
 		print "new job cmd ", cmd
 		ret = commands.getstatusoutput(cmd)

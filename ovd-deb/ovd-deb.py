@@ -117,7 +117,7 @@ f.close()
 run(['sudo', '-v'])
 display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
 svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[branch][0])
-#display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
+display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
 display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 
 sumup = {}
