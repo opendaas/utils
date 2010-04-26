@@ -20,7 +20,7 @@ DEFAULT_BRANCH = 'ovd3'
 # { tagname : [ svn_repository, repo_target, file_base_version], debian_folder }
 BRANCHES = {
     'ovd25'  : ['ovd/branches/2.5', '2.5-staging', 'SessionManager/configure.in.in', 'debian'],
-    'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', 'debian'],
+    'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', 'packaging/debian'],
     'xrdp'  : ['xrdp/trunk', 'trunk', 'configure.ac.in', ''],
 }
 
