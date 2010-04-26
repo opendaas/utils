@@ -18,6 +18,7 @@
 
 import os, sys
 import getopt, atexit, time, shutil
+from xml.dom.minidom import Document
 
 from ovdprefs import *
 from ovdebuild import ovdebuild
@@ -31,9 +32,8 @@ def display_cmd(cmd, msg, ssh=False):
     else: print "FAILED"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:],
-                       'okrpb:',
-                      ['stdout', 'keeplog', 'publish', 'branch'])
+    opts, args = getopt.getopt(sys.argv[1:], 'hokpb:',
+                       ['help', 'stdout', 'keeplog', 'publish', 'branch', 'xml'])
 except getopt.GetoptError, err:
     print >> sys.stderr, 'Error parsing the command line'
     sys.exit(1)
@@ -43,18 +43,46 @@ publish, keeplog, on_stdout = False, False, False
 branch = DEFAULT_BRANCH
 
 for o, a in opts:
+
     if o in ('-p', '--publish'):
         publish = True
+
     if o in ('-b', '--branch'):
         if BRANCHES.has_key(a):
             branch = a
         else:
             print 'Unknown branch: %s'%a
             sys.exit(1)
+
     if o in ('-k', '--keeplog'):
         keeplog = True
+
     if o in ('-o', '--stdout'):
         on_stdout = True
+
+    if o in ('--xml'):
+        doc = Document()
+        packages_node = doc.createElement('root')
+        doc.appendChild(packages_node)
+        for (version, packages_dic) in PACKAGES.items():
+            branch_node = doc.createElement('branch')
+            branch_node.setAttribute('version', version)
+            for (package_name, v) in packages_dic.items():
+                package_name_node = doc.createElement('package')
+                package_name_node.setAttribute('alias', package_name)
+                package_name_node.setAttribute('directory', v[0])
+                package_name_node.setAttribute('name', v[1])
+                branch_node.appendChild(package_name_node)
+            packages_node.appendChild(branch_node)
+        print doc.toprettyxml()
+        sys.exit(0)
+
+    if o in ('-h', '--help'):
+        print """\
+ovd-deb [-p|--publish] [-b|--branch branches] [-k|keeplog] [-o|--stdout]
+ovd-deb --xml
+ovd-deb [-h|--help] """
+        sys.exit(0)
 
 if len(args) < 1:
     to_build = PACKAGES[branch].keys()
