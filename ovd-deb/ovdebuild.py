@@ -174,6 +174,8 @@ class ovdebuild:
         tarball_path = None
 
         def make_tarball(name=None):
+            if self._src_folder is 'meta':
+                return
             for cmd in PACKAGES[self._branch][self._module][2]:
                 if not self._run (cmd, cwd=self._module_dir):
                     return self._log_end("Cannot build the tarball", 'tarball')
@@ -203,8 +205,7 @@ class ovdebuild:
         # make the tarball
         else:
             self._log(" Building the source tarball:", True)
-            if self._src_folder is not 'meta':
-                orig_path = make_tarball(orig_name)
+            orig_path = make_tarball(orig_name)
 
         self._log_end()
 
