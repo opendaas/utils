@@ -92,7 +92,7 @@ class ovdebuild:
             return True
         else:
             self._sumup[sumup] = False
-            print 'FAILED - '+msg
+            print '\n FAILED - ' + msg,
             return False
 
 

@@ -149,11 +149,11 @@ for module in sumup.keys():
         if not sumup[module][1][step]:
             failure = step
             break
-    text += '%s => ' % module
     if failure:
-        text += "FAILURE (%s), log in %s\n" % (step, sumup[module][0])
+        text += "\n%s -> FAILURE (%s), log in %s\n" % \
+            (module, step, sumup[module][0])
     else:
-        text += "BUILT\n"
+        text += module + " -> BUILT\n"
         if keeplog:
             text += ", log in %s\n" % sumup[module][0]
         else:
