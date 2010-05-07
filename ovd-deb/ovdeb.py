@@ -32,20 +32,26 @@ def display_cmd(cmd, msg, ssh=False):
     else: print "FAILED"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'hokpb:',
-                       ['help', 'stdout', 'keeplog', 'publish', 'branch', 'xml'])
+    opts, args = getopt.getopt(sys.argv[1:], 'horpb:',
+                     ['help', 'stdout', 'release', 'publish', 'branch', 'xml'])
 except getopt.GetoptError, err:
     print >> sys.stderr, 'Error parsing the command line'
     sys.exit(1)
 
 # defaults options
-publish, keeplog, on_stdout = False, False, False
+publish, release, on_stdout = False, False, False
 branch = DEFAULT_BRANCH
 
 for o, a in opts:
 
+    if o in ('-r', '--do-release'):
+        release = True
+
     if o in ('-p', '--publish'):
         publish = True
+
+    if o in ('-o', '--stdout'):
+        on_stdout = True
 
     if o in ('-b', '--branch'):
         if BRANCHES.has_key(a):
@@ -53,12 +59,6 @@ for o, a in opts:
         else:
             print 'Unknown branch: %s'%a
             sys.exit(1)
-
-    if o in ('-k', '--keeplog'):
-        keeplog = True
-
-    if o in ('-o', '--stdout'):
-        on_stdout = True
 
     if o in ('--xml'):
         doc = Document()
@@ -79,7 +79,7 @@ for o, a in opts:
 
     if o in ('-h', '--help'):
         print """\
-ovd-deb [-p|--publish] [-b|--branch branches] [-k|keeplog] [-o|--stdout]
+ovd-deb [-p|--publish] [-b|--branch branches] [-r|--release] [-o|--stdout]
 ovd-deb --xml
 ovd-deb [-h|--help] """
         sys.exit(0)
@@ -130,7 +130,7 @@ for module in to_build:
     print '\nBuild started for module %s (%s)' %\
         (PACKAGES[branch][module][1], BRANCHES[branch][0])
 
-    deb = ovdebuild(module, branch, on_stdout)
+    deb = ovdebuild(module, branch, release, on_stdout)
     for arch in PACKAGES[branch][module][3]:
         deb.build_deb(arch)
     if publish:
@@ -140,7 +140,7 @@ for module in to_build:
 if publish:
     print
     display_cmd(['/home/gauvain/bin/ovdweb.sh'], \
-                   "Update the OVD package website", ssh=True)
+                "Update the OVD package website", ssh=True)
 
 text = '\n'
 for module in sumup.keys():
@@ -150,12 +150,9 @@ for module in sumup.keys():
             failure = step
             break
     if failure:
-        text += "\n%s -> FAILURE (%s), log in %s\n" % \
-            (module, step, sumup[module][0])
+        result = "FAILURE (%s), log in %s" % (step, sumup[module][0])
     else:
-        text += module + " -> BUILT\n"
-        if keeplog:
-            text += ", log in %s\n" % sumup[module][0]
-        else:
-            os.unlink(sumup[module][0])
+        result = "BUILT"
+    text += "%s -> %ss\n" % (module, result)
+
 print text

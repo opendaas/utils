@@ -27,11 +27,13 @@ from ovdtools import run, save
 class ovdebuild:
 
     # set all the variables we'll need
-    def __init__(self, module, branch=DEFAULT_BRANCH, on_stdout=False):
+    def __init__(self, module, branch=DEFAULT_BRANCH, \
+                 do_release=False, on_stdout=False):
 
         self._module = module
         self._branch = branch
         self._on_stdout = on_stdout
+        self._do_release = do_release
 
         self._svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[self._branch][0])
         self._revno = "%05d" % \
@@ -185,13 +187,18 @@ class ovdebuild:
                 self._log("os.rename(%s, %s)"%(path, name))
                 os.rename(path, name)
                 save(self._results_dir , name)
-                return path
+                return os.path.join(BUILD_DIR, name)
             else:
                 save(self._results_dir , tarball_name)
                 return os.path.join(BUILD_DIR, tarball_name)
 
+        # make tarball in default case
+        if (self._do_release):
+            self._log(" Building the source tarball:", True)
+            orig_path = make_tarball(orig_name)
+
         # get the source on local disk
-        if os.path.exists(orig_result):
+        elif os.path.exists(orig_result):
             self._log(" Getting the source tarball from disk:", True)
             shutil.copy(orig_result, BUILD_DIR)
 
@@ -202,7 +209,7 @@ class ovdebuild:
                       (self._module_name, self._upstream_version)])
             save(self._results_dir , ['gz', 'dsc'])
 
-        # make the tarball
+        # make tarball in default case
         else:
             self._log(" Building the source tarball:", True)
             orig_path = make_tarball(orig_name)
