@@ -81,7 +81,7 @@ for o, a in opts:
         print """\
 ovd-deb [-p|--publish] [-b|--branch branches] [-r|--release] [-o|--stdout]
 ovd-deb --xml
-ovd-deb [-h|--help] """
+ovd-deb [-h|--help]"""
         sys.exit(0)
 
 if len(args) < 1:
@@ -133,6 +133,7 @@ for module in to_build:
     deb = ovdebuild(module, branch, release, on_stdout)
     for arch in PACKAGES[branch][module][3]:
         deb.build_deb(arch)
+    deb.clean()
     if publish:
         deb.publish()
     sumup[module] = deb.get_sumup()

@@ -217,7 +217,8 @@ class ovdebuild:
         self._log_end()
 
         # apply patches
-        self._patches = glob.glob('%s/%s_%s_*' % (PATCH_DIR, self._branch, self._module))
+        self._patches = glob.glob('%s/%s_%s_*.patch' % \
+                            (PATCH_DIR, self._branch, self._module))
         series_path = os.path.join(PATCH_DIR, 'series')
         pc_path = os.path.join(self._svn_base, '.pc')
         if os.path.exists(series_path):
@@ -268,6 +269,7 @@ class ovdebuild:
         else:
             orig_opt = '-sd'
 
+        # launch dpkg-source
         cmd = ['dpkg-buildpackage', '-S', '-us', '-uc', orig_opt]
         if self._run(cmd, cwd=self._src_dir):
             # hack to fix the debuild bug
@@ -303,14 +305,15 @@ class ovdebuild:
         if not self._run(cmd):
             return self._log_end("sbuild cannot make the package", 'debbuild')
 
-        # remove patches
+        save(self._results_dir , ['deb'])
+        return self._log_end()
+
+
+    def clean(self):
         if self._patches:
             if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
                               'pop', '-a'], cwd=self._svn_base):
                 return self._log_end("Cannot remove patches", 'tarball')
-
-        save(self._results_dir , ['deb'])
-        return self._log_end()
 
 
     def publish(self):
