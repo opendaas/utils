@@ -54,12 +54,13 @@ PACKAGES = {
     }
 }
 
-BASE_DIR = '/home/samuel/ovd-deb'
-LOCK_FILE = BASE_DIR+'/.locked'
-LOGS_DIR = BASE_DIR+'/logs'
-BUILD_DIR = BASE_DIR+'/build'
-RESULTS_DIR = BASE_DIR+'/results'
-PATCH_DIR = BASE_DIR+'/patches'
-SVN_BASE_DIR = '/home/samuel/svn'
+HOME = os.path.expanduser('~')
+SVN_BASE_DIR = HOME+'/svn'
+BASE_DIR     = HOME+'/svn/tools/ovd-deb'
+LOCK_FILE    = BASE_DIR+'/.locked'
+LOGS_DIR     = BASE_DIR+'/logs'
+BUILD_DIR    = BASE_DIR+'/build'
+RESULTS_DIR  = BASE_DIR+'/results'
+PATCH_DIR    = BASE_DIR+'/patches'
 SSH_CMD = 'ssh gauvain@firex.ulteo.com -p 222'
 

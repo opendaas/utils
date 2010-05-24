@@ -154,6 +154,6 @@ for module in sumup.keys():
         result = "FAILURE (%s), log in %s" % (step, sumup[module][0])
     else:
         result = "BUILT"
-    text += "%s -> %ss\n" % (module, result)
+    text += "%s -> %s\n" % (module, result)
 
 print text
