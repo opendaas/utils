@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 DEFAULT_BRANCH = 'ovd3'
 
 # { tagname : [ svn_repository, repo_target, file_base_version], debian_folder }

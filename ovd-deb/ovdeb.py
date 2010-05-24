@@ -140,7 +140,7 @@ for module in to_build:
 
 if publish:
     print
-    display_cmd(['/home/gauvain/bin/ovdweb.sh'], \
+    display_cmd(['/home/gauvain/bin/ovdweb'], \
                 "Update the OVD package website", ssh=True)
 
 text = '\n'
