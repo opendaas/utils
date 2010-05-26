@@ -9,7 +9,7 @@ import os,logging,pwd
 from pyinotify import ProcessEvent
 from pyinotify import ThreadedNotifier, WatchManager
 from pyinotify import ProcessEvent, EventsCodes
-from ovdaemon import *
+from ovdprefs import *
 
 spool_dir = os.path.join('/', 'tmp','packages')
 
