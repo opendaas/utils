@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010 Samuel Bovée <samuel@ulteo.com>
+# Author Laurent CLOUET <laurent@ulteo.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -114,7 +115,6 @@ f = open(quilt_file, 'w')
 f.write("QUILT_PATCHES=%s/patches\n"%BASE_DIR)
 f.close()
 
-run(['sudo', '-v'])
 display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
 svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[branch][0])
 #display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
