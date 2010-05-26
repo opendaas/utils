@@ -33,7 +33,7 @@ def display_cmd(cmd, msg, ssh=False):
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'horpb:',
-                     ['help', 'stdout', 'release', 'publish', 'branch', 'xml'])
+                     ['help', 'stdout', 'release', 'publish', 'branch=', 'xml'])
 except getopt.GetoptError, err:
     print >> sys.stderr, 'Error parsing the command line'
     sys.exit(1)
@@ -57,7 +57,7 @@ for o, a in opts:
         if BRANCHES.has_key(a):
             branch = a
         else:
-            print 'Unknown branch: %s'%a
+            print "Unknown branch: '%s'"%a
             sys.exit(1)
 
     if o in ('--xml'):
@@ -117,7 +117,7 @@ f.close()
 run(['sudo', '-v'])
 display_cmd(['sudo', 'apt-get', 'update'], "Update the apt cache packaging")
 svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[branch][0])
-display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
+#display_cmd(['svn', '-R', 'revert', svn_base], "Revert the subversion repository")
 display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 
 sumup = {}
