@@ -45,7 +45,7 @@ if __name__ == "__main__":
 	while True:
 		a_job = jobs.get()
 		#cmd = 'python /home/gauvain/ovddebs/ovd-deb-package.py -b %s %s'%(a_job[0], a_job[1])
-		cmd = 'python %s --publish --branch %s %s'%(os.path.join(BASE_DIR,'ovd-deb.py'), a_job[0], a_job[1])
+		cmd = 'python %s --publish --branch %s %s'%(os.path.join(BASE_DIR,'ovdeb.py'), a_job[0], a_job[1])
 		#print "start ",a_job
 		print "new job cmd ", cmd
 		ret = commands.getstatusoutput(cmd)
