@@ -49,6 +49,7 @@ PACKAGES = {
         'slave'   : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
         'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
         'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ALL_ARCH],
+        'subsys'  : ['meta', 'ovd-subsystem', '', ALL_ARCH],
         'desktop' : ['meta', 'ovd-desktop', '', ALL_ARCH],
     },
     'xrdp':{
