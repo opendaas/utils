@@ -22,8 +22,8 @@ import getopt, atexit, time, shutil
 from xml.dom.minidom import Document
 
 from ovdprefs import *
+from ovdtools import *
 from ovdebuild import ovdebuild
-from ovdtools import run
 
 def display_cmd(cmd, msg, ssh=False):
     print "%s:"%msg,
@@ -123,8 +123,9 @@ display_cmd(['svn', 'up', svn_base], "Update the subversion repository")
 sumup = {}
 
 for module in to_build:
-    shutil.rmtree(BUILD_DIR, True)
-    os.makedirs(BUILD_DIR)
+    rminfolder(BUILD_DIR)
+    if not os.path.exists(BUILD_DIR):
+        os.makedirs(BUILD_DIR)
     os.chdir(BUILD_DIR)
 
     print '\nBuild started for module %s (%s)' %\

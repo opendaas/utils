@@ -58,9 +58,14 @@ class ovdebuild:
         self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
 
         self._repo_rev = self._get_repo_rev()
+
         local_rev = self._get_local_rev()
-        self._version = '%s-%d' % (self._upstream_version, \
-                                   max(self._repo_rev, local_rev) + 1)
+        if self._do_release:
+            self._version = self._upstream_version+'-1'
+        else:
+            self._version = '%s-%d' % (self._upstream_version, \
+                            max(self._repo_rev, self._get_local_rev()) + 1)
+
         self._src_name = '%s_%s'%(self._module_name, self._version)
         self._src_dir = os.path.join(BUILD_DIR, self._tarballname)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
@@ -71,9 +76,9 @@ class ovdebuild:
         if not os.path.isdir(logfile_dir):
             os.makedirs(logfile_dir)
 
+        self._patches = []
         self._sumup = { 'tarball': True, 'srcbuild': True,\
                         'debbuild': True, 'publish': True }
-
         self._log(" Version release: %s\n"%self._version, True)
 
 
@@ -146,7 +151,7 @@ class ovdebuild:
         package = self._module_name
         if repo.find('ovd') is not -1:
             package = "ulteo-" + package
-        cmd = "%s '/home/gauvain/bin/ovdreprepro list %s %s | grep %s'" \
+        cmd = "%s 'ovdreprepro list %s %s | grep %s'" \
                % (SSH_CMD, repo, package, self._revno)
         result = os.popen(cmd).readline()
         if result == "":
@@ -166,6 +171,21 @@ class ovdebuild:
             (RESULTS_DIR, self._dist_name, self._tarball_name)):
             rev = max (rev, int(f.rpartition('-')[2].rpartition('.dsc')[0]))
         return rev
+
+    def _new_release(self):
+        self._log(" Cleaning for new release:", True)
+
+        # clean local results save
+        for f in glob.glob("%s/%s/%s_%s*" % (RESULTS_DIR, \
+            self._dist_name, self._module_name, self._upstream_version)):
+            os.remove(f)
+
+        # clean the source on the repository
+        if self._repo_rev is not 0:
+            ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
+                        self._module_name], ssh=True)
+            if ret:
+                return self._log_end()
 
 
     def build_tarball(self):
@@ -286,6 +306,10 @@ class ovdebuild:
 
     def build_deb(self, arch):
 
+        if self._do_release:
+            if not self._new_release():
+                return self._log_end("cannot clean for new release", 'debbuild')
+
         if not os.path.exists(self._src_dir):
             if not self.build_tarball():
                 return self._log_end("Cannot get the orig source", 'debbuild')
@@ -323,11 +347,11 @@ class ovdebuild:
             ret = self._run(['dput', 'firex', f])
 
         if ret:
-            ret = self._run(['/home/gauvain/bin/update-ovd-repo.sh'], ssh=True)
+            ret = self._run(['update-ovd-repo.sh'], ssh=True)
         if ret:
-            self._run(['/home/gauvain/bin/ovdreprepro', 'flood', \
+            self._run(['ovdreprepro', 'flood', \
                         self._dist_name], ssh=True)
-            self._run(['/home/gauvain/bin/ovd-needs-building'], ssh=True)
+            self._run(['ovd-needs-building'], ssh=True)
             return self._log_end()
 
         return self._log_end("Cannot publish the package", 'publish')

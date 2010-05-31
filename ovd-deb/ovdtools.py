@@ -55,6 +55,16 @@ def run(args, logfile=None, cwd=None, ssh=False):
 def save(folder, ext):
     if not os.path.isdir(folder):
         os.makedirs(folder)
-    for ext in ext:
-        for f in glob.glob("%s/*%s"%(BUILD_DIR, ext)):
+    for ext_ in ext:
+        for f in glob.glob("%s/*%s"%(BUILD_DIR, ext_)):
             shutil.copy(f, folder)
+
+def rminfolder(dir_):
+    for filename in os.listdir(dir_):
+        try:
+            path = os.path.join(dir_, filename)
+            os.remove(path)
+        except OSError:
+            if sys.exc_value.errno is 21:
+                shutil.rmtree(path)
+
