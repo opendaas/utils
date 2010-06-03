@@ -136,7 +136,7 @@ for module in to_build:
     deb = ovdebuild(module, branch, release, on_stdout)
     for arch in PACKAGES[branch][module][3]:
         deb.build_deb(arch)
-    deb.clean()
+    deb.remove_patch()
     if publish:
         deb.publish()
     sumup[module] = deb.get_sumup()

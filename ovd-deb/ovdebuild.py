@@ -81,6 +81,23 @@ class ovdebuild:
                         'debbuild': True, 'publish': True }
         self._log(" Version release: %s\n"%self._version, True)
 
+        if self._do_release:
+            self._log(" Cleaning for new release:", True)
+
+            # clean local results save
+            for f in glob.glob("%s/%s/%s_%s*" % (RESULTS_DIR, \
+                self._dist_name, self._module_name, self._upstream_version)):
+                os.remove(f)
+
+            # clean the source on the repository
+            ret = True
+            if self._repo_rev is not 0:
+                ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
+                            self._module_name], ssh=True)
+            if ret:
+                self._log_end()
+            else:
+                self._log_end("cannot clean for new release", 'debbuild')
 
     def _log(self, msg, out=False):
         if out:
@@ -99,7 +116,7 @@ class ovdebuild:
             return True
         else:
             self._sumup[sumup] = False
-            print '\n FAILED - ' + msg,
+            print '\n FAILED - '+msg
             return False
 
 
@@ -171,21 +188,6 @@ class ovdebuild:
             (RESULTS_DIR, self._dist_name, self._tarball_name)):
             rev = max (rev, int(f.rpartition('-')[2].rpartition('.dsc')[0]))
         return rev
-
-    def _new_release(self):
-        self._log(" Cleaning for new release:", True)
-
-        # clean local results save
-        for f in glob.glob("%s/%s/%s_%s*" % (RESULTS_DIR, \
-            self._dist_name, self._module_name, self._upstream_version)):
-            os.remove(f)
-
-        # clean the source on the repository
-        if self._repo_rev is not 0:
-            ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
-                        self._module_name], ssh=True)
-            if ret:
-                return self._log_end()
 
 
     def build_tarball(self):
@@ -306,10 +308,6 @@ class ovdebuild:
 
     def build_deb(self, arch):
 
-        if self._do_release:
-            if not self._new_release():
-                return self._log_end("cannot clean for new release", 'debbuild')
-
         if not os.path.exists(self._src_dir):
             if not self.build_tarball():
                 return self._log_end("Cannot get the orig source", 'debbuild')
@@ -333,7 +331,7 @@ class ovdebuild:
         return self._log_end()
 
 
-    def clean(self):
+    def remove_patch(self):
         if self._patches:
             if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
                               'pop', '-a'], cwd=self._svn_base):
