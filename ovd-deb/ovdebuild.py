@@ -40,17 +40,17 @@ class ovdebuild:
             pysvn.Client().info(self._svn_base)["revision"].number
 
         self._dist_name = BRANCHES[self._branch][1]
-        self._src_folder = PACKAGES[self._branch][self._module][0]
+        self._deb_folder = PACKAGES[self._branch][self._module][0]
         self._module_name = PACKAGES[self._branch][self._module][1]
 
         if branch != 'xrdp':
-            debian_folder = self._module_name
+            deb_folder = self._module_name
         else:
-            debian_folder = self._src_folder
+            deb_folder = self._deb_folder
 
-        self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
+        self._module_dir = '%s/%s'%(self._svn_base, self._deb_folder)
         self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
-            BRANCHES[self._branch][3], debian_folder)
+            BRANCHES[self._branch][3], deb_folder)
 
         self._upstream_version = self._get_base_version()
         self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
@@ -116,7 +116,7 @@ class ovdebuild:
             return True
         else:
             self._sumup[sumup] = False
-            print '\n FAILED - '+msg
+            print ' FAILED - '+msg
             return False
 
 
@@ -198,11 +198,14 @@ class ovdebuild:
         tarball_path = None
 
         def make_tarball(name=None):
-            if self._src_folder is 'meta':
-                return
+            self._log(" Building the source tarball:", True)
+            if self._deb_folder is 'meta':
+                return None
             for cmd in PACKAGES[self._branch][self._module][2]:
                 if not self._run (cmd, cwd=self._module_dir):
-                    return self._log_end("Cannot build the tarball", 'tarball')
+                    self._log_end("Cannot build the tarball", 'tarball')
+                    return None
+            self._log_end()
             shutil.move(os.path.join(self._module_dir, tarball_name), BUILD_DIR)
             if name:
                 path = os.path.join(BUILD_DIR, tarball_name)
@@ -216,13 +219,13 @@ class ovdebuild:
 
         # make tarball in default case
         if (self._do_release):
-            self._log(" Building the source tarball:", True)
             orig_path = make_tarball(orig_name)
 
         # get the source on local disk
         elif os.path.exists(orig_result):
             self._log(" Getting the source tarball from disk:", True)
             shutil.copy(orig_result, BUILD_DIR)
+            self._log_end()
 
         # get the source on repository
         elif self._repo_rev is not 0:
@@ -230,42 +233,50 @@ class ovdebuild:
             self._run(['apt-get', 'source', '-d', '%s=%s' % \
                       (self._module_name, self._upstream_version)])
             save(self._results_dir , ['gz', 'dsc'])
+            self._log_end()
 
         # make tarball in default case
         else:
-            self._log(" Building the source tarball:", True)
             orig_path = make_tarball(orig_name)
-
-        self._log_end()
 
         # apply patches
         self._patches = glob.glob('%s/%s_%s_*.patch' % \
                             (PATCH_DIR, self._branch, self._module))
-        series_path = os.path.join(PATCH_DIR, 'series')
-        pc_path = os.path.join(self._svn_base, '.pc')
-        if os.path.exists(series_path):
-            os.unlink(series_path)
-        if os.path.exists(pc_path):
-            shutil.rmtree(pc_path, True)
         if self._patches:
             self._log(" Apply %d patches:"%(len(self._patches)), True)
+            series_path = os.path.join(PATCH_DIR, 'series')
+            if os.path.exists(series_path):
+                os.unlink(series_path)
+            pc_path = os.path.join(self._svn_base, '.pc')
+            if os.path.exists(pc_path):
+                shutil.rmtree(pc_path, True)
             for patch in self._patches:
                 self._run(['quilt', 'import', '-p0',\
                            'patches/'+patch.rpartition('/')[2]], cwd=BASE_DIR)
             if not self._run(['quilt', '--quiltrc', BASE_DIR+'/.quiltrc',\
                               'push', '-a'], cwd=self._svn_base):
                 return self._log_end("Cannot apply patches", 'tarball')
-            tarball_path = make_tarball()
             self._log_end()
 
-        # extract sources
-        if tarball_path is not None and os.path.isfile(tarball_path):
-            self._run (['tar', 'zxf', tarball_path, '-C', BUILD_DIR])
+            # remake tarball and extract it
+            tarball_path = make_tarball()
+            if tarball_path is not None and os.path.isfile(tarball_path):
+                self._run (['tar', 'zxf', tarball_path, '-C', BUILD_DIR])
+            else:
+                return False
+
+        # no patch to apply, just extract sources from orig tarball
         elif orig_path is not None and os.path.isfile(orig_path):
-            self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
-        else:
+                self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
+
+        # no source tarball available because this is a metapackage
+        elif self._deb_folder is 'meta':
             if not os.path.isfile(self._src_dir):
                 os.mkdir(self._src_dir)
+
+        # error state
+        else:
+            return False
 
         # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))

@@ -33,7 +33,7 @@ PYTHON_CMD = [['./autogen.py'], ['python', 'setup.py', 'sdist', '--dist-dir=.']]
 ANY_ARCH = ['amd64', 'i386']
 ALL_ARCH = ['all']
 
-# { tagname : [self._src_folder, self._module_name, command, arch]}
+# { tagname : [self._src_folder, self._module_name, command, arch]}
 PACKAGES = {
     'ovd25':{
         'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
@@ -59,8 +59,8 @@ PACKAGES = {
 
 HOME = os.path.expanduser('~')
 SVN_BASE_DIR = HOME+'/svn'
-BASE_DIR     = HOME+'/svn/tools/ovd-deb'
-BUILD_DIR    = HOME+'/build'
+BASE_DIR     = HOME+'/ovd-deb'
+BUILD_DIR    = BASE_DIR+'/build'
 LOCK_FILE    = BASE_DIR+'/.locked'
 LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
