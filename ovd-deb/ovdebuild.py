@@ -192,34 +192,35 @@ class ovdebuild:
 
     def build_tarball(self):
         orig_name = self._tarball_name+'.orig.tar.gz'
-        tarball_name = self._tarballname+'.tar.gz'
         orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
-        orig_path = None
-        tarball_path = None
 
-        def make_tarball(name=None):
+        def make_tarball(rename=None):
             self._log(" Building the source tarball:", True)
-            if self._deb_folder is 'meta':
-                return None
             for cmd in PACKAGES[self._branch][self._module][2]:
                 if not self._run (cmd, cwd=self._module_dir):
-                    self._log_end("Cannot build the tarball", 'tarball')
-                    return None
-            self._log_end()
-            shutil.move(os.path.join(self._module_dir, tarball_name), BUILD_DIR)
-            if name:
-                path = os.path.join(BUILD_DIR, tarball_name)
-                self._log("os.rename(%s, %s)"%(path, name))
-                os.rename(path, name)
-                save(self._results_dir , name)
-                return os.path.join(BUILD_DIR, name)
-            else:
-                save(self._results_dir , tarball_name)
-                return os.path.join(BUILD_DIR, tarball_name)
+                    return self._log_end("Cannot build the tarball", 'tarball')
+
+            # move tarball in build directory
+            name = self._tarballname+'.tar.gz'
+            shutil.move(os.path.join(self._module_dir, name), BUILD_DIR)
+            if rename:
+                os.rename(os.path.join(BUILD_DIR, name), rename)
+                name = rename
+
+            # save and extract tarball
+            save(self._results_dir , name)
+            self._run (['tar', 'zxf', os.path.join(BUILD_DIR, name), '-C', BUILD_DIR])
+            return self._log_end()
+
+        # metapackage: no need to make tarball
+        if self._deb_folder is 'meta':
+            if not os.path.isfile(self._src_dir):
+                os.mkdir(self._src_dir)
 
         # make tarball in default case
-        if (self._do_release):
-            orig_path = make_tarball(orig_name)
+        elif (self._do_release):
+            if not make_tarball(orig_name):
+                return False
 
         # get the source on local disk
         elif os.path.exists(orig_result):
@@ -236,8 +237,8 @@ class ovdebuild:
             self._log_end()
 
         # make tarball in default case
-        else:
-            orig_path = make_tarball(orig_name)
+        elif not make_tarball(orig_name):
+            return False
 
         # apply patches
         self._patches = glob.glob('%s/%s_%s_*.patch' % \
@@ -257,26 +258,8 @@ class ovdebuild:
                               'push', '-a'], cwd=self._svn_base):
                 return self._log_end("Cannot apply patches", 'tarball')
             self._log_end()
-
-            # remake tarball and extract it
-            tarball_path = make_tarball()
-            if tarball_path is not None and os.path.isfile(tarball_path):
-                self._run (['tar', 'zxf', tarball_path, '-C', BUILD_DIR])
-            else:
+            if not make_tarball():
                 return False
-
-        # no patch to apply, just extract sources from orig tarball
-        elif orig_path is not None and os.path.isfile(orig_path):
-                self._run (['tar', 'zxf', orig_path, '-C', BUILD_DIR])
-
-        # no source tarball available because this is a metapackage
-        elif self._deb_folder is 'meta':
-            if not os.path.isfile(self._src_dir):
-                os.mkdir(self._src_dir)
-
-        # error state
-        else:
-            return False
 
         # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
