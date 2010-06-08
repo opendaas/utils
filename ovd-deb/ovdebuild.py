@@ -40,15 +40,15 @@ class ovdebuild:
             pysvn.Client().info(self._svn_base)["revision"].number
 
         self._dist_name = BRANCHES[self._branch][1]
-        self._deb_folder = PACKAGES[self._branch][self._module][0]
+        self._src_folder = PACKAGES[self._branch][self._module][0]
         self._module_name = PACKAGES[self._branch][self._module][1]
 
         if branch != 'xrdp':
             deb_folder = self._module_name
         else:
-            deb_folder = self._deb_folder
+            deb_folder = self._src_folder
 
-        self._module_dir = '%s/%s'%(self._svn_base, self._deb_folder)
+        self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
         self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
             BRANCHES[self._branch][3], deb_folder)
 
@@ -213,7 +213,7 @@ class ovdebuild:
             return self._log_end()
 
         # metapackage: no need to make tarball
-        if self._deb_folder is 'meta':
+        if self._src_folder is 'meta':
             if not os.path.isfile(self._src_dir):
                 os.mkdir(self._src_dir)
 
@@ -264,6 +264,10 @@ class ovdebuild:
         # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
         shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
+        if os.path.exists(self._module_dir+'/init'):
+            init_path = glob.glob(self._module_dir+'/init/*')[0]
+            shutil.copyfile(init_path, "%s/debian/%s.init" % \
+                (self._src_dir, init_path.rpartition('/')[2]) )
 
         return True
 
