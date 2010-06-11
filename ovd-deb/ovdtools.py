@@ -27,7 +27,7 @@ def run(args, logfile=None, cwd=None, ssh=False):
     if logfile == -1:
         if cwd:
             print "Cwd: " + cwd
-        print "Running cmd: "+''.join(args)
+        print "Running cmd: "+' '.join(args)
         out = sys.stdout
     else:
         if logfile:
