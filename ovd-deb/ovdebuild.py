@@ -59,7 +59,6 @@ class ovdebuild:
 
         self._repo_rev = self._get_repo_rev()
 
-        local_rev = self._get_local_rev()
         if self._do_release:
             self._version = self._upstream_version+'-1'
         else:
@@ -231,8 +230,8 @@ class ovdebuild:
         # get the source on repository
         elif self._repo_rev is not 0:
             self._log(" Getting the source tarball from repo:", True)
-            self._run(['apt-get', 'source', '-d', '%s=%s' % \
-                      (self._module_name, self._upstream_version)])
+            self._run(['apt-get', 'source', '-d', '%s=%s-%d' % \
+                      (self._module_name, self._upstream_version, self._repo_rev)])
             save(self._results_dir , ['gz', 'dsc'])
             self._log_end()
 
