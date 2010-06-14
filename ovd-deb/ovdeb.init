@@ -1,0 +1,54 @@
+#!/bin/sh -e
+### BEGIN INIT INFO
+# Provides:          vdiserver
+# Required-Start:    $local_fs $network $syslog
+# Required-Stop:     $local_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# X-Interactive: False
+# Short-Description: Start VDI server daemon
+#### END INIT INFO
+
+# import the LSB init functions
+. /lib/lsb/init-functions
+
+PIDFILE=/var/run/ovdaemon.pid
+DAEMON=
+
+case "$1" in
+
+  start)
+    su packaging
+    python $DAEMON &
+    echo $! > $PIDFILE
+    log_success_msg "OVDEB daemon launch"
+  ;;
+
+  force-reload|restart)
+    $0 stop
+    $0 start
+  ;;
+
+  stop)
+    if [ -f $PIDFILE ]; then
+        DAEMONPID=$(cat $PIDFILE | tr -d '[:blank:]')
+        rm $PIDFILE
+        kill -15 $DAEMONPID
+        log_success_msg "OVDEB daemon stopped"
+    else
+        log_warning_msg "OVDEB daemon not running"
+        exit 2
+    fi
+  ;;
+
+  status)
+    status_of_proc -p "$PIDFILE" "$DAEMON" ovdeb && exit 0 || exit $?
+  ;;
+
+  *)
+    echo "Usage: /etc/init.d/ovdeb {start|stop|restart|force-reload|status}"
+    exit 1
+  ;;
+esac
+
+exit 0
