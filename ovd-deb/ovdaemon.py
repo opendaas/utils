@@ -11,7 +11,7 @@ from pyinotify import ThreadedNotifier, WatchManager
 from pyinotify import ProcessEvent, EventsCodes
 from ovdprefs import *
 
-spool_dir = os.path.join('/', 'var','local', 'spool', 'packaging')
+spool_dir = os.path.join('/', 'var','spool', 'packaging')
 
 class PRec(ProcessEvent):
 	def __init__(self, jobs_):
