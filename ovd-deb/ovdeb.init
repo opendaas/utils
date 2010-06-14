@@ -18,6 +18,13 @@ DAEMON=/home/packaging/ovd-deb/ovdaemon.sh
 case "$1" in
 
   start)
+    if [ -f $PIDFILE ]; then
+        log_failure_msg "OVDEB daemon already running"
+        exit 1
+    else
+        touch $PIDFILE
+        chown packaging $PIDFILE
+    fi
     su packaging -c "sh $DAEMON"
     log_success_msg "OVDEB daemon launch"
   ;;
