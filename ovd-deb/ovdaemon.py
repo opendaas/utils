@@ -11,7 +11,7 @@ from pyinotify import ThreadedNotifier, WatchManager
 from pyinotify import ProcessEvent, EventsCodes
 from ovdprefs import *
 
-spool_dir = os.path.join('/', 'tmp','packages')
+spool_dir = os.path.join('/', 'var','local', 'spool', 'packaging')
 
 class PRec(ProcessEvent):
 	def __init__(self, jobs_):
@@ -31,7 +31,7 @@ class PRec(ProcessEvent):
 				self.jobs.put((a_list[0].strip(), a_list[1].strip(), job_file))
 				#print "os.rename(%s,%s)"%(file_path, job_file)
 				os.rename(file_path, job_file)
-				print "job added (%s,%s)"%(a_list[0], a_list[1])
+				print "job added (%s,%s)"%(a_list[0].strip(), a_list[1].strip())
 
 if __name__ == "__main__":
 	jobs = Queue.Queue()
@@ -54,4 +54,4 @@ if __name__ == "__main__":
 		job_done = os.path.join(spool_dir, 'done', os.path.basename(job_file))
 
 		os.rename(job_file, job_done)
-		print "job done"
+		print "job done(%s,%s)"%(a_job[0], a_job[1])

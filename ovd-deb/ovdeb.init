@@ -1,26 +1,24 @@
 #!/bin/sh -e
 ### BEGIN INIT INFO
-# Provides:          vdiserver
+# Provides:          ovdeb
 # Required-Start:    $local_fs $network $syslog
 # Required-Stop:     $local_fs $network $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # X-Interactive: False
-# Short-Description: Start VDI server daemon
+# Short-Description: Start OVDEB daemon
 #### END INIT INFO
 
 # import the LSB init functions
 . /lib/lsb/init-functions
 
-PIDFILE=/var/run/ovdaemon.pid
-DAEMON=
+PIDFILE=/var/run/ovdeb.pid
+DAEMON=/home/packaging/ovd-deb/ovdaemon.sh
 
 case "$1" in
 
   start)
-    su packaging
-    python $DAEMON &
-    echo $! > $PIDFILE
+    su packaging -c "sh $DAEMON"
     log_success_msg "OVDEB daemon launch"
   ;;
 
