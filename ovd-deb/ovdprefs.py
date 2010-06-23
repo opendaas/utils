@@ -21,8 +21,10 @@ DEFAULT_BRANCH = 'ovd3'
 
 # { tagname : [ svn_repository, repo_target, file_base_version], debian_folder }
 BRANCHES = {
-    'ovd25'  : ['ovd/branches/2.5', '2.5-staging', 'SessionManager/configure.in.in', 'debian'],
-    'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', 'packaging/debian'],
+    'ovd25' : ['ovd/branches/2.5', '2.5-staging', \
+               'SessionManager/configure.in.in', 'debian'],
+    'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', \
+                'packaging/debian'],
     'xrdp'  : ['xrdp/trunk', 'trunk', 'configure.ac.in', ''],
 }
 
@@ -35,23 +37,34 @@ ALL_ARCH = ['all']
 
 # { tagname : [self._src_folder, self._module_name, command, arch]}
 PACKAGES = {
+
     'ovd25':{
         'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
-        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'aps'     : ['ApplicationServer', 'ovd-application-server', AUTOTOOLS_CMD, ANY_ARCH],
+        'sm'      : ['SessionManager', 'ovd-session-manager', \
+                     AUTOTOOLS_CMD, ALL_ARCH],
+        'aps'     : ['ApplicationServer', 'ovd-application-server', \
+                     AUTOTOOLS_CMD, ANY_ARCH],
         'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
     },
+
     'ovd3':{
-        'sm'      : ['SessionManager', 'ovd-session-manager', AUTOTOOLS_CMD, ALL_ARCH],
-        'web'     : ['WebInterface', 'ovd-webinterface', AUTOTOOLS_CMD, ALL_ARCH],
-        'shell'   : ['ApplicationServer/OvdShells', 'ovd-shells', PYTHON_CMD, ALL_ARCH],
+        'sm'      : ['SessionManager', 'ovd-session-manager', \
+                     AUTOTOOLS_CMD, ALL_ARCH],
+        'web'     : ['WebInterface', 'ovd-webinterface', \
+                     AUTOTOOLS_CMD, ALL_ARCH],
+        'shell'   : ['ApplicationServer/OvdShells', 'ovd-shells', \
+                     PYTHON_CMD, ALL_ARCH],
         'slave'   : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
         'java'    : ['client/java', 'ovd-java-clients', ANT_CMD, ALL_ARCH],
-        'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ANY_ARCH],
+        'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', \
+                     AUTOTOOLS_CMD, ANY_ARCH],
+        'settings': ['client/java/OVDIntegratedLauncher', 'ovd-integrated-launcher', \
+                     AUTOTOOLS_CMD, ANY_ARCH],
         'cups'    : ['utils/cups2all', 'cups2all', AUTOTOOLS_CMD, ALL_ARCH],
         'subsys'  : ['meta', 'ovd-subsystem', '', ALL_ARCH],
         'desktop' : ['meta', 'ovd-desktop', '', ALL_ARCH],
     },
+
     'xrdp':{
         'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
     }
@@ -66,4 +79,3 @@ LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
 PATCH_DIR    = BASE_DIR+'/patches'
 SSH_CMD = 'ssh gauvain@firex.ulteo.com -p 222'
-
