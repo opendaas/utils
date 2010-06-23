@@ -101,14 +101,16 @@ if len(to_build) == 0:
     print 'Nothing to build.'
     sys.exit(0)
 
+while os.path.isfile(LOCK_FILE):
+    print 'Build system locked; waiting...'
+    try:
+        time.sleep(5)
+    except:
+        sys.exit(2)
+open(LOCK_FILE, 'w').close()
 def cleanup():
     os.unlink(LOCK_FILE)
 atexit.register(cleanup)
-
-while os.path.isfile(LOCK_FILE):
-    print 'Build system locked; waiting...'
-    time.sleep(5)
-open(LOCK_FILE, 'w').close()
 
 quilt_file = os.path.join(BASE_DIR, '.quiltrc')
 f = open(quilt_file, 'w')

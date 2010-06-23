@@ -46,7 +46,7 @@ PACKAGES = {
         'web'     : ['WebInterface', 'ovd-webinterface', AUTOTOOLS_CMD, ALL_ARCH],
         'shell'   : ['ApplicationServer/OvdShells', 'ovd-shells', PYTHON_CMD, ALL_ARCH],
         'slave'   : ['OvdServer', 'ovd-slaveserver', PYTHON_CMD, ALL_ARCH],
-        'java'    : ['client/java', 'ovd-applets', ANT_CMD, ALL_ARCH],
+        'java'    : ['client/java', 'ovd-java-clients', ANT_CMD, ALL_ARCH],
         'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', AUTOTOOLS_CMD, ANY_ARCH],
         'cups'    : ['utils/cups2all', 'cups2all', AUTOTOOLS_CMD, ALL_ARCH],
         'subsys'  : ['meta', 'ovd-subsystem', '', ALL_ARCH],
@@ -59,8 +59,8 @@ PACKAGES = {
 
 HOME = os.path.expanduser('~')
 SVN_BASE_DIR = HOME+'/svn'
-BASE_DIR     = HOME+'/svn/tools/ovd-deb'
-BUILD_DIR    = HOME+'/build'
+BASE_DIR     = HOME+'/ovd-deb'
+BUILD_DIR    = BASE_DIR+'/build'
 LOCK_FILE    = BASE_DIR+'/.locked'
 LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
