@@ -58,7 +58,7 @@ PACKAGES = {
         'java'    : ['client/java', 'ovd-java-clients', ANT_CMD, ALL_ARCH],
         'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', \
                      AUTOTOOLS_CMD, ANY_ARCH],
-        'settings': ['client/java/OVDIntegratedLauncher', 'ovd-integrated-launcher', \
+        'launcher': ['client/java/OVDIntegratedLauncher', 'ovd-integrated-launcher', \
                      AUTOTOOLS_CMD, ANY_ARCH],
         'cups'    : ['utils/cups2all', 'cups2all', AUTOTOOLS_CMD, ALL_ARCH],
         'subsys'  : ['meta', 'ovd-subsystem', '', ALL_ARCH],
