@@ -43,14 +43,16 @@ class ovdebuild:
         self._src_folder = PACKAGES[self._branch][self._module][0]
         self._module_name = PACKAGES[self._branch][self._module][1]
 
-        if branch != 'xrdp':
-            deb_folder = self._module_name
-        else:
-            deb_folder = self._src_folder
+        debdir = "%s/%s" % (self._svn_base, BRANCHES[self._branch][3])
+        svn_deb_dirs = [debdir+'/debian',
+             '%s/%s/debian' % (debdir, self._module_name),
+             '%s/%s' % (debdir, self._module_name) ]
+        for path in svn_deb_dirs:
+            if os.path.exists(path):
+                self._svn_deb_dir=path
+                break
 
         self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
-        self._svn_deb_dir = '%s/%s/%s/debian'%(self._svn_base, \
-            BRANCHES[self._branch][3], deb_folder)
 
         self._upstream_version = self._get_base_version()
         self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
@@ -130,24 +132,29 @@ class ovdebuild:
 
 
     def _get_base_version(self):
-        major_re = re.compile(r'^m4_define.*_version_major.*\[([^\[]*)].*')
-        minor_re = re.compile(r'^m4_define.*_version_minor.*\[([^\[]*)].*')
-        build_re = re.compile(r'^m4_define.*_version_build.*\[([^\[]*)].*')
-
-        lines = open(os.path.join(self._svn_base, BRANCHES[self._branch][2]))\
-                    .readlines()[:3]
-        try:
+        filename = BRANCHES[self._branch][2]
+        if filename.find('setup.py'):
+            save = sys.path[0]
+            sys.path[0] = self._svn_base
+            version = __import__(filename, fromlist=['setup_args']).setup_args['version']
+            sys.path[0] = save
+            os.chdir(BUILD_DIR)
+        else:
+            major_re = re.compile(r'^m4_define.*_version_major.*\[([^\[]*)].*')
+            minor_re = re.compile(r'^m4_define.*_version_minor.*\[([^\[]*)].*')
+            build_re = re.compile(r'^m4_define.*_version_build.*\[([^\[]*)].*')
+            lines = open(os.path.join(self._svn_base, filename)).readlines()[:3]
             major = major_re.search(lines[0]).group(1)
             minor = minor_re.search(lines[1]).group(1)
             # the build field might be empty
             try:
-                build = build_re.search(lines[2]).group(1).replace('@REVISION@', self._revno)
+                build = build_re.search(lines[2]).group(1)
             except:
                 build = ''
             version = '%s.%s%s'%(major, minor, build)
-            return version
-        except:
-            return None
+
+        version = version.replace('@REVISION@', self._revno)
+        return version
 
 
     def _get_changelog_version(self):

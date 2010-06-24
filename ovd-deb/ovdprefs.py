@@ -26,6 +26,7 @@ BRANCHES = {
     'ovd3'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', \
                 'packaging/debian'],
     'xrdp'  : ['xrdp/trunk', 'trunk', 'configure.ac.in', ''],
+    'vdi'   : ['vdi', 'trunk', 'desktop.setup', 'packaging/debian'],
 }
 
 AUTOTOOLS_CMD = [['./autogen.sh'], ['make', 'distcheck']]
@@ -61,19 +62,23 @@ PACKAGES = {
         'launcher': ['client/java/OVDIntegratedLauncher', 'ovd-integrated-launcher', \
                      AUTOTOOLS_CMD, ANY_ARCH],
         'cups'    : ['utils/cups2all', 'cups2all', AUTOTOOLS_CMD, ALL_ARCH],
-        'subsys'  : ['meta', 'ovd-subsystem', '', ALL_ARCH],
-        'desktop' : ['meta', 'ovd-desktop', '', ALL_ARCH],
+        'subsys'  : ['meta', 'ovd-subsystem', [], ALL_ARCH],
+        'desktop' : ['meta', 'ovd-desktop', [], ALL_ARCH],
     },
 
     'xrdp':{
         'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
+    },
+
+    'vdi':{
+        'desktop' : ['desktop', 'vdi-desktop', PYTHON_CMD, ALL_ARCH],
     }
 }
 
 HOME = os.path.expanduser('~')
 SVN_BASE_DIR = HOME+'/svn'
-BASE_DIR     = HOME+'/ovd-deb'
-BUILD_DIR    = BASE_DIR+'/build'
+BASE_DIR     = SVN_BASE_DIR+'/tools/ovd-deb'
+BUILD_DIR    = HOME+'/build'
 LOCK_FILE    = BASE_DIR+'/.locked'
 LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
