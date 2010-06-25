@@ -134,10 +134,7 @@ if publish:
                 "\nUpdate the OVD package website", ssh=True)
     print "Update XML repo file: ",
     sys.stdout.flush()
-    xml = conftoxml().toxml()
-    fd = open('/var/cache/ovdeb/repo.xml', 'w')
-    fd.write(xml)
-    fd.close()
+    conftoxml()
     print "OK"
 
 text = '\n'

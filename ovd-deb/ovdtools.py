@@ -93,4 +93,8 @@ def conftoxml():
                 get_repo_version(BRANCHES[svn_repo][1], v[1]))
             branch_node.appendChild(package_name_node)
         packages_node.appendChild(branch_node)
+    xml = doc.toxml()
+    fd = open('/var/cache/ovdeb/repo.xml', 'w')
+    fd.write(xml)
+    fd.close()
     return doc
