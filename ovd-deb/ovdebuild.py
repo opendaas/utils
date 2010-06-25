@@ -171,11 +171,8 @@ class ovdebuild:
 
     def _get_repo_rev(self):
         repo = BRANCHES[self._branch][1]
-        package = self._module_name
-        if repo.find('ovd') is not -1:
-            package = "ulteo-" + package
         cmd = "%s 'ovdreprepro list %s %s | grep %s'" \
-               % (SSH_CMD, repo, package, self._revno)
+               % (SSH_CMD, repo, self._module_name, self._revno)
         result = os.popen(cmd).readline()
         if result == "":
             return 0

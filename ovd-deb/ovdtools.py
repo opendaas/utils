@@ -19,6 +19,7 @@
 import os, sys
 import glob, shutil
 from subprocess import Popen, STDOUT
+from xml.dom.minidom import Document
 
 from ovdprefs import *
 
@@ -52,6 +53,14 @@ def run(args, logfile=None, cwd=None, ssh=False):
         return True
     return False
 
+def get_repo_version(branch, package):
+    cmd = "%s 'ovdreprepro -T dsc list %s %s'" % (SSH_CMD, branch, package)
+    result = os.popen(cmd).readline()
+    if result:
+        return result[:len(result)-1].rpartition(' ')[2]
+    else:
+        return ''
+
 def save(folder, ext):
     if not os.path.isdir(folder):
         os.makedirs(folder)
@@ -68,3 +77,20 @@ def rminfolder(dir_):
             if sys.exc_value.errno is 21:
                 shutil.rmtree(path)
 
+def conftoxml():
+    doc = Document()
+    packages_node = doc.createElement('root')
+    doc.appendChild(packages_node)
+    for (svn_repo, packages_dic) in PACKAGES.items():
+        branch_node = doc.createElement('branch')
+        branch_node.setAttribute('repo', svn_repo)
+        for (package_name, v) in packages_dic.items():
+            package_name_node = doc.createElement('package')
+            package_name_node.setAttribute('alias', package_name)
+            package_name_node.setAttribute('directory', v[0])
+            package_name_node.setAttribute('name', v[1])
+            package_name_node.setAttribute('version', \
+                get_repo_version(BRANCHES[svn_repo][1], v[1]))
+            branch_node.appendChild(package_name_node)
+        packages_node.appendChild(branch_node)
+    return doc

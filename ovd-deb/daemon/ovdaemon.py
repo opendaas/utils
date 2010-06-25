@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os, commands, signal, Queue
+import os, sys, commands, signal, Queue
 from pyinotify import ThreadedNotifier, WatchManager, \
                       ProcessEvent, EventsCodes
+
+sys.path.append(os.path.join(sys.path[0], '..'))
 from ovdprefs import *
 
 class PRec(ProcessEvent):
@@ -55,5 +57,4 @@ if __name__ == "__main__":
 		print "job done(%s,%s)" % (branch, package)
 
 	if th_inotify.isAlive():
-		print "quit daemon properly"
 		th_inotify.stop()

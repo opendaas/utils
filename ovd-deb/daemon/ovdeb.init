@@ -13,7 +13,7 @@
 . /lib/lsb/init-functions
 
 PIDFILE=/var/run/ovdeb.pid
-DAEMON=/home/packaging/ovd-deb/ovdaemon.sh
+DAEMONDIR=/home/packaging/ovd-deb/daemon/
 
 case "$1" in
 
@@ -25,7 +25,7 @@ case "$1" in
         touch $PIDFILE
         chown packaging $PIDFILE
     fi
-    su packaging -c "sh $DAEMON"
+    su packaging -l -c "sh $DAEMONDIR/ovdaemon.sh $DAEMONDIR"
     log_success_msg "OVDEB daemon launch"
   ;;
 

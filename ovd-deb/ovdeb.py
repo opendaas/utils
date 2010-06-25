@@ -19,7 +19,6 @@
 
 import os, sys
 import getopt, atexit, time, shutil
-from xml.dom.minidom import Document
 
 from ovdprefs import *
 from ovdtools import *
@@ -62,20 +61,7 @@ for o, a in opts:
             sys.exit(1)
 
     if o in ('--xml'):
-        doc = Document()
-        packages_node = doc.createElement('root')
-        doc.appendChild(packages_node)
-        for (version, packages_dic) in PACKAGES.items():
-            branch_node = doc.createElement('branch')
-            branch_node.setAttribute('version', version)
-            for (package_name, v) in packages_dic.items():
-                package_name_node = doc.createElement('package')
-                package_name_node.setAttribute('alias', package_name)
-                package_name_node.setAttribute('directory', v[0])
-                package_name_node.setAttribute('name', v[1])
-                branch_node.appendChild(package_name_node)
-            packages_node.appendChild(branch_node)
-        print doc.toprettyxml()
+        print conftoxml().toprettyxml()
         sys.exit(0)
 
     if o in ('-h', '--help'):
@@ -144,9 +130,15 @@ for module in to_build:
     sumup[module] = deb.get_sumup()
 
 if publish:
-    print
     display_cmd(['/home/gauvain/bin/ovdweb'], \
-                "Update the OVD package website", ssh=True)
+                "\nUpdate the OVD package website", ssh=True)
+    print "Update XML repo file: ",
+    sys.stdout.flush()
+    xml = conftoxml().toxml()
+    fd = open('/var/cache/ovdeb/repo.xml', 'w')
+    fd.write(xml)
+    fd.close()
+    print "OK"
 
 text = '\n'
 for module in sumup.keys():
