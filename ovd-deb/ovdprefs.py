@@ -48,7 +48,7 @@ PACKAGES = {
         'chroot'  : ['chroot-apps', 'ovd-chroot-apps', AUTOTOOLS_CMD, ANY_ARCH],
     },
 
-    'ovd3':{
+    'ovd30':{
         'sm'      : ['SessionManager', 'ovd-session-manager', \
                      AUTOTOOLS_CMD, ALL_ARCH],
         'web'     : ['WebInterface', 'ovd-webinterface', \
