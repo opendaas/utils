@@ -71,7 +71,7 @@ PACKAGES = {
     },
 
     'vdi':{
-        'desktop' : ['desktop', 'vdi-desktop', PYTHON_CMD, ALL_ARCH],
+        'host'    : ['desktop', 'vdi-host', PYTHON_CMD, ALL_ARCH],
     }
 }
 
@@ -84,4 +84,5 @@ LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
 PATCH_DIR    = BASE_DIR+'/patches'
 SPOOL_DIR    = "/var/spool/ovdeb"
+CACHE_DIR    = "/var/cache/ovdeb"
 SSH_CMD      = "ssh gauvain@firex.ulteo.com -p 222"

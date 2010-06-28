@@ -87,6 +87,7 @@ if len(to_build) == 0:
     print 'Nothing to build.'
     sys.exit(0)
 
+# put lock system in utils...
 while os.path.isfile(LOCK_FILE):
     print 'Build system locked; waiting...'
     try:
@@ -132,10 +133,6 @@ for module in to_build:
 if publish:
     display_cmd(['/home/gauvain/bin/ovdweb'], \
                 "\nUpdate the OVD package website", ssh=True)
-    print "Update XML repo file: ",
-    sys.stdout.flush()
-    conftoxml()
-    print "OK"
 
 text = '\n'
 for module in sumup.keys():

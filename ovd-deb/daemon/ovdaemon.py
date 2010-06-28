@@ -7,6 +7,7 @@ from pyinotify import ThreadedNotifier, WatchManager, \
 
 sys.path.append(os.path.join(sys.path[0], '..'))
 from ovdprefs import *
+from ovdtools import conftoxml
 
 class PRec(ProcessEvent):
 
@@ -48,10 +49,12 @@ if __name__ == "__main__":
 		except Queue.Empty:
 			continue
 		branch, package, job_file = a_job[0], a_job[1], a_job[2]
+		#TODO: do it with import...
 		cmd = 'python %s --publish --branch %s %s' % \
-              (os.path.join(BASE_DIR,'ovdeb.py'), branch, package)
+				(os.path.join(BASE_DIR,'ovdeb.py'), branch, package)
 		print "new job cmd ", cmd
 		ret = commands.getstatusoutput(cmd)
+		conftoxml()
 		job_done = os.path.join(SPOOL_DIR, 'done', os.path.basename(job_file))
 		os.rename(job_file, job_done)
 		print "job done(%s,%s)" % (branch, package)
