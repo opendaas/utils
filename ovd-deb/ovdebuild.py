@@ -54,6 +54,7 @@ class ovdebuild:
 
         self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
 
+        # TODO: scan base version for EACH module ! (delete BRANCH[*][2])
         self._upstream_version = self._get_base_version()
         self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
         self._upstream_version = self._upstream_version.replace('trunk', '')
@@ -134,10 +135,10 @@ class ovdebuild:
     def _get_base_version(self):
         filename = BRANCHES[self._branch][2]
         if filename.find('setup') is not -1:
-            save = sys.path[0]
-            sys.path[0] = self._svn_base
-            version = __import__(filename, fromlist=['setup_args']).setup_args['version']
-            sys.path[0] = save
+            sys.path.append(self._svn_base)
+            import desktop.autogen
+            version = __import__(filename, fromlist=['setup_args'])\
+                        .setup_args['version']
             os.chdir(BUILD_DIR)
         else:
             major_re = re.compile(r'^m4_define.*_version_major.*\[([^\[]*)].*')
