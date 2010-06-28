@@ -30,6 +30,8 @@ if (isset($_REQUEST['addjob'])) {
 		file_put_contents($file_path, $_REQUEST['branch'].
                           '|'.$_REQUEST['package']."\n");
         sleep(1);
+        header('Location: '.$_SERVER['REQUEST_URI']);
+        die();
 	}
 }
 
