@@ -133,7 +133,7 @@ class ovdebuild:
 
     def _get_base_version(self):
         filename = BRANCHES[self._branch][2]
-        if filename.find('setup.py') is not -1:
+        if filename.find('setup') is not -1:
             save = sys.path[0]
             sys.path[0] = self._svn_base
             version = __import__(filename, fromlist=['setup_args']).setup_args['version']
