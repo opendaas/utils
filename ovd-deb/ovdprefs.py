@@ -17,7 +17,7 @@
 
 import os
 
-DEFAULT_BRANCH = 'ovd3'
+DEFAULT_BRANCH = 'ovd30'
 
 # { tagname : [ svn_repository, repo_target, file_base_version], debian_folder }
 BRANCHES = {

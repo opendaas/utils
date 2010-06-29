@@ -28,12 +28,13 @@ class ovdebuild:
 
     # set all the variables we'll need
     def __init__(self, module, branch=DEFAULT_BRANCH, \
-                 do_release=False, on_stdout=False):
+                 release=False, stable=False, on_stdout=False):
 
         self._module = module
         self._branch = branch
         self._on_stdout = on_stdout
-        self._do_release = do_release
+        self._stable = stable
+        self._release = release or self._stable
 
         self._svn_base = os.path.join(SVN_BASE_DIR, BRANCHES[self._branch][0])
         self._revno = "%05d" % \
@@ -52,24 +53,24 @@ class ovdebuild:
                 self._svn_deb_dir=path
                 break
 
-        self._module_dir = '%s/%s'%(self._svn_base, self._src_folder)
-
-        # TODO: scan base version for EACH module ! (delete BRANCH[*][2])
-        self._upstream_version = self._get_base_version()
-        self._tarballname = '%s-%s'%(self._module_name, self._upstream_version)
-        self._upstream_version = self._upstream_version.replace('trunk', '')
-        self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
-
         self._repo_rev = self._get_repo_rev()
-
-        if self._do_release:
-            self._version = self._upstream_version+'-1'
+        if self._stable:
+            self._version = self._get_changelog_version()
+            verev = self._version.partition('-')
+            self._upstream_version = verev[0]
+            self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
         else:
-            self._version = '%s-%d' % (self._upstream_version, \
-                            max(self._repo_rev, self._get_local_rev()) + 1)
+            # TODO: scan base version for EACH module ! (delete BRANCH[*][2])
+            self._upstream_version = self._get_base_version().replace('trunk', '')
+            self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
+            if self._release:
+                self._version = self._upstream_version+'-1'
+            else:
+                self._version = '%s-%d' % (self._upstream_version, \
+                                max(self._repo_rev, self._get_local_rev()) + 1)
 
         self._src_name = '%s_%s'%(self._module_name, self._version)
-        self._src_dir = os.path.join(BUILD_DIR, self._tarballname)
+        self._src_dir = os.path.join(BUILD_DIR, self._tarball_name)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
 
         logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
@@ -83,7 +84,7 @@ class ovdebuild:
                         'debbuild': True, 'publish': True }
         self._log(" Version release: %s\n"%self._version, True)
 
-        if self._do_release:
+        if self._release:
             self._log(" Cleaning for new release:", True)
 
             # clean local results save
@@ -93,9 +94,10 @@ class ovdebuild:
 
             # clean the source on the repository
             ret = True
-            if self._repo_rev is not 0:
+            if self._repo_rev:
                 ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
                             self._module_name], ssh=True)
+                self._repo_rev = 0
             if ret:
                 self._log_end()
             else:
@@ -195,25 +197,27 @@ class ovdebuild:
 
 
     def build_tarball(self):
+        svn_dir = '%s/%s'%(self._svn_base, self._src_folder)
         orig_name = self._tarball_name+'.orig.tar.gz'
         orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
 
         def make_tarball(rename=None):
             self._log(" Building the source tarball:", True)
             for cmd in PACKAGES[self._branch][self._module][2]:
-                if not self._run (cmd, cwd=self._module_dir):
+                if not self._run (cmd, cwd=svn_dir):
                     return self._log_end("Cannot build the tarball", 'tarball')
 
             # move tarball in build directory
-            name = self._tarballname+'.tar.gz'
-            shutil.move(os.path.join(self._module_dir, name), BUILD_DIR)
+            tarball = '%s-%s.tar.gz'%(self._module_name, self._get_base_version())
+            shutil.move(os.path.join(svn_dir, tarball), BUILD_DIR)
             if rename:
-                os.rename(os.path.join(BUILD_DIR, name), rename)
-                name = rename
+                os.rename(os.path.join(BUILD_DIR, tarball), rename)
+                tarball = rename
 
             # save and extract tarball
-            save(self._results_dir , name)
-            self._run (['tar', 'zxf', os.path.join(BUILD_DIR, name), '-C', BUILD_DIR])
+            save(self._results_dir , tarball)
+            self._run (['tar', 'zxf', os.path.join(BUILD_DIR, tarball), \
+                        '-C', BUILD_DIR])
             return self._log_end()
 
         # metapackage: no need to make tarball
@@ -222,7 +226,7 @@ class ovdebuild:
                 os.mkdir(self._src_dir)
 
         # make tarball in default case
-        elif (self._do_release):
+        elif (self._release):
             if not make_tarball(orig_name):
                 return False
 
@@ -233,7 +237,7 @@ class ovdebuild:
             self._log_end()
 
         # get the source on repository
-        elif self._repo_rev is not 0:
+        elif self._repo_rev:
             self._log(" Getting the source tarball from repo:", True)
             self._run(['apt-get', 'source', '-d', '%s=%s-%d' % \
                       (self._module_name, self._upstream_version, self._repo_rev)])
@@ -268,8 +272,8 @@ class ovdebuild:
         # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
         shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
-        if os.path.exists(self._module_dir+'/init'):
-            init_path = glob.glob(self._module_dir+'/init/*')[0]
+        if os.path.exists(svn_dir+'/init'):
+            init_path = glob.glob(svn_dir+'/init/*')[0]
             shutil.copyfile(init_path, "%s/debian/%s.init" % \
                 (self._src_dir, init_path.rpartition('/')[2]) )
 
@@ -280,18 +284,21 @@ class ovdebuild:
 
         self._log(" Building the source package:", True)
 
+        # remove .svn folders if there are
         os.system('rm -rf $(find %s -name .svn)'%self._src_dir)
 
         # generate a changelog
-        cmd = ['dch', '--force-distribution', '-v', self._version,\
-               '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
-        if not self._run(cmd, cwd=self._src_dir):
-            return self._log_end("Cannot generate a changelog", 'srcbuild')
+        if not self._stable:
+            cmd = ['dch', '--force-distribution', '-v', self._version,\
+                   '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
+            if not self._run(cmd, cwd=self._src_dir):
+                return self._log_end("Cannot generate a changelog", 'srcbuild')
 
-        if self._repo_rev is 0:
-            orig_opt = '-sa'
-        else:
+        # choose if we want include orig sources or not
+        if self._repo_rev:
             orig_opt = '-sd'
+        else:
+            orig_opt = '-sa'
 
         # launch dpkg-source
         cmd = ['dpkg-buildpackage', '-S', '-us', '-uc', orig_opt]
