@@ -96,7 +96,7 @@ class ovdebuild:
             ret = True
             if self._repo_rev:
                 ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
-                            self._module_name], ssh=True)
+                                 self._module_name], ssh=True)
                 self._repo_rev = 0
             if ret:
                 self._log_end()
@@ -138,7 +138,7 @@ class ovdebuild:
         filename = BRANCHES[self._branch][2]
         if filename.find('setup') is not -1:
             sys.path.append(self._svn_base)
-            import desktop.autogen
+            import host.autogen
             version = __import__(filename, fromlist=['setup_args'])\
                         .setup_args['version']
             os.chdir(BUILD_DIR)

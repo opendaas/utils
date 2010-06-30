@@ -26,7 +26,7 @@ BRANCHES = {
     'ovd30'  : ['ovd/trunk',  'trunk', 'SessionManager/configure.in.in', \
                 'packaging/debian'],
     'xrdp'  : ['xrdp/trunk', 'trunk', 'configure.ac.in', ''],
-    'vdi'   : ['vdi', 'trunk', 'desktop.setup', 'packaging/debian'],
+    'vdi'   : ['vdi', 'trunk', 'host.setup', 'packaging/debian'],
 }
 
 AUTOTOOLS_CMD = [['./autogen.sh'], ['make', 'distcheck']]
@@ -59,8 +59,8 @@ PACKAGES = {
         'java'    : ['client/java', 'ovd-java-clients', ANT_CMD, ALL_ARCH],
         'settings': ['ApplicationServer/desktop', 'ovd-desktop-settings', \
                      AUTOTOOLS_CMD, ANY_ARCH],
-        'launcher': ['client/java/OVDIntegratedLauncher', 'ovd-integrated-launcher', \
-                     AUTOTOOLS_CMD, ANY_ARCH],
+        'launcher': ['client/java/OVDIntegratedLauncher', \
+                     'ovd-integrated-launcher', AUTOTOOLS_CMD, ANY_ARCH],
         'cups'    : ['utils/cups2all', 'cups2all', AUTOTOOLS_CMD, ALL_ARCH],
         'subsys'  : ['meta', 'ovd-subsystem', [], ALL_ARCH],
         'desktop' : ['meta', 'ovd-desktop', [], ALL_ARCH],
@@ -71,7 +71,7 @@ PACKAGES = {
     },
 
     'vdi':{
-        'host'    : ['desktop', 'vdi-host', PYTHON_CMD, ALL_ARCH],
+        'host'    : ['host', 'vdi-host', PYTHON_CMD, ALL_ARCH],
     }
 }
 
