@@ -94,7 +94,8 @@ class ovdebuild:
 
             # clean the source on the repository
             ret = True
-            if self._repo_rev:
+            #TODO: remove stable when get_repo_revno will fix
+            if self._repo_rev or self._stable:
                 ret = self._run(['ovdreprepro', 'removesrc', self._dist_name, \
                                  self._module_name], ssh=True)
                 self._repo_rev = 0
@@ -172,6 +173,7 @@ class ovdebuild:
             return None
 
 
+    # TODO: improve when there is no revno
     def _get_repo_rev(self):
         repo = BRANCHES[self._branch][1]
         cmd = "%s 'ovdreprepro list %s %s | grep %s'" \
