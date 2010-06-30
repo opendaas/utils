@@ -77,8 +77,8 @@ PACKAGES = {
 
 HOME = os.path.expanduser('~')
 SVN_BASE_DIR = HOME+'/svn'
-BASE_DIR     = SVN_BASE_DIR+'/tools/ovd-deb'
-BUILD_DIR    = HOME+'/build'
+BASE_DIR     = HOME+'/ovd-deb'
+BUILD_DIR    = HOME+'/ovd-deb/build'
 LOCK_FILE    = BASE_DIR+'/.locked'
 LOGS_DIR     = BASE_DIR+'/logs'
 RESULTS_DIR  = BASE_DIR+'/results'
