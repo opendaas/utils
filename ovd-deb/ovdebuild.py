@@ -20,6 +20,7 @@
 
 import os, sys, re
 import glob, time, shutil, pysvn
+from xml.dom.minidom import parse
 
 from ovdprefs import *
 from ovdtools import run, save
@@ -41,10 +42,14 @@ class ovdebuild:
             pysvn.Client().info(self._svn_base)["revision"].number
 
         self._dist_name = BRANCHES[self._branch][1]
-        self._src_folder = PACKAGES[self._branch][self._module][0]
+        self._svn_folder = PACKAGES[self._branch][self._module][0]
+        if self._svn_folder is not META:
+            self._svn_dir = os.path.join(self._svn_base, self._svn_folder)
+        else:
+            self._svn_dir = ''
         self._module_name = PACKAGES[self._branch][self._module][1]
 
-        debdir = "%s/%s" % (self._svn_base, BRANCHES[self._branch][3])
+        debdir = "%s/%s" % (self._svn_base, BRANCHES[self._branch][2])
         svn_deb_dirs = [debdir+'/debian',
              '%s/%s/debian' % (debdir, self._module_name),
              '%s/%s' % (debdir, self._module_name) ]
@@ -54,14 +59,13 @@ class ovdebuild:
                 break
 
         self._repo_rev = self._get_repo_rev()
+        self._base_version = self._get_base_version()
         if self._stable:
             self._version = self._get_changelog_version()
-            verev = self._version.partition('-')
-            self._upstream_version = verev[0]
+            self._upstream_version =  self._version.partition('-')[0]
             self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
         else:
-            # TODO: scan base version for EACH module ! (delete BRANCH[*][2])
-            self._upstream_version = self._get_base_version().replace('trunk', '')
+            self._upstream_version = self._base_version.replace('trunk', '')
             self._tarball_name = '%s_%s'%(self._module_name, self._upstream_version)
             if self._release:
                 self._version = self._upstream_version+'-1'
@@ -136,28 +140,47 @@ class ovdebuild:
 
 
     def _get_base_version(self):
-        filename = BRANCHES[self._branch][2]
-        if filename.find('setup') is not -1:
-            sys.path.append(self._svn_base)
-            import host.autogen
-            version = __import__(filename, fromlist=['setup_args'])\
-                        .setup_args['version']
-            os.chdir(BUILD_DIR)
-        else:
+        sys.path.append(self._svn_dir)
+
+        if os.path.exists(os.path.join(self._svn_dir, "autogen.py")):
+            import autogen
+            del sys.modules['autogen']
+
+        if os.path.exists(os.path.join(self._svn_dir, "setup.py")):
+            imported = __import__('setup', fromlist=['setup_args'])
+            version = imported.setup_args['version']
+
+        elif os.path.exists(os.path.join(self._svn_dir, "build.xml")):
+                dom = parse(os.path.join(self._svn_dir, "build.xml"))
+                for p in dom.getElementsByTagName('property'):
+                    if p.getAttribute('name') == "version":
+                        version = p.getAttribute('value')
+                        break
+
+        elif  os.path.exists(os.path.join(self._svn_dir, "configure.ac.in")) or \
+              os.path.exists(os.path.join(self._svn_dir, "configure.in.in")):
             major_re = re.compile(r'^m4_define.*_version_major.*\[([^\[]*)].*')
             minor_re = re.compile(r'^m4_define.*_version_minor.*\[([^\[]*)].*')
             build_re = re.compile(r'^m4_define.*_version_build.*\[([^\[]*)].*')
-            lines = open(os.path.join(self._svn_base, filename)).readlines()[:3]
+            config = glob.glob(self._svn_dir+"/configure.??.in")[0]
+            lines = open(config).readlines()[:3]
             major = major_re.search(lines[0]).group(1)
             minor = minor_re.search(lines[1]).group(1)
-            # the build field might be empty
-            try:
-                build = build_re.search(lines[2]).group(1)
-            except:
-                build = ''
+            build = build_re.search(lines[2]).group(1)
             version = '%s.%s%s'%(major, minor, build)
+            version = version.replace('@REVISION@', self._revno)
 
-        version = version.replace('@REVISION@', self._revno)
+        elif self._svn_folder is META:
+            fd = open(os.path.join(self._svn_deb_dir, "version"), 'r')
+            version = fd.readline()
+            fd.close()
+            version = version[:len(version)-1]
+            return version.replace('@REVISION@', self._revno)
+
+        else:
+            raise Exception("no way to find how get the base version")
+
+        sys.path.remove(self._svn_dir)
         return version
 
 
@@ -175,9 +198,8 @@ class ovdebuild:
 
     # TODO: improve when there is no revno
     def _get_repo_rev(self):
-        repo = BRANCHES[self._branch][1]
         cmd = "%s 'ovdreprepro list %s %s | grep %s'" \
-               % (SSH_CMD, repo, self._module_name, self._revno)
+               % (SSH_CMD, self._dist_name, self._module_name, self._revno)
         result = os.popen(cmd).readline()
         if result == "":
             return 0
@@ -199,19 +221,18 @@ class ovdebuild:
 
 
     def build_tarball(self):
-        svn_dir = '%s/%s'%(self._svn_base, self._src_folder)
         orig_name = self._tarball_name+'.orig.tar.gz'
         orig_result = os.path.join(RESULTS_DIR, self._dist_name, orig_name)
 
         def make_tarball(rename=None):
             self._log(" Building the source tarball:", True)
             for cmd in PACKAGES[self._branch][self._module][2]:
-                if not self._run (cmd, cwd=svn_dir):
+                if not self._run (cmd, cwd=self._svn_dir):
                     return self._log_end("Cannot build the tarball", 'tarball')
 
             # move tarball in build directory
-            tarball = '%s-%s.tar.gz'%(self._module_name, self._get_base_version())
-            shutil.move(os.path.join(svn_dir, tarball), BUILD_DIR)
+            tarball = '%s-%s.tar.gz'%(self._module_name, self._base_version)
+            shutil.move(os.path.join(self._svn_dir, tarball), BUILD_DIR)
             if rename:
                 os.rename(os.path.join(BUILD_DIR, tarball), rename)
                 tarball = rename
@@ -223,7 +244,7 @@ class ovdebuild:
             return self._log_end()
 
         # metapackage: no need to make tarball
-        if self._src_folder is 'meta':
+        if self._svn_folder is META:
             if not os.path.isfile(self._src_dir):
                 os.mkdir(self._src_dir)
 
@@ -274,8 +295,8 @@ class ovdebuild:
         # copy the debian packaging files
         self._log("os.copytree(%s,%s)"%(self._svn_deb_dir, self._src_dir))
         shutil.copytree(self._svn_deb_dir, self._src_dir+'/debian')
-        if os.path.exists(svn_dir+'/init'):
-            init_path = glob.glob(svn_dir+'/init/*')[0]
+        if os.path.exists(self._svn_dir+'/init'):
+            init_path = glob.glob(self._svn_dir+'/init/*')[0]
             shutil.copyfile(init_path, "%s/debian/%s.init" % \
                 (self._src_dir, init_path.rpartition('/')[2]) )
 
@@ -291,7 +312,7 @@ class ovdebuild:
 
         # generate a changelog
         if not self._stable:
-            cmd = ['dch', '--force-distribution', '-v', self._version,\
+            cmd = ['dch', '--force-distribution', '-v', self._version, '-b',\
                    '-D', self._dist_name.replace('.', '-'), 'New devel snaphot']
             if not self._run(cmd, cwd=self._src_dir):
                 return self._log_end("Cannot generate a changelog", 'srcbuild')
