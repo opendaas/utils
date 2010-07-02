@@ -87,7 +87,8 @@ def conftoxml():
         for (package_name, v) in packages_dic.items():
             package_name_node = doc.createElement('package')
             package_name_node.setAttribute('alias', package_name)
-            package_name_node.setAttribute('directory', v[0])
+            if v[0]:
+                package_name_node.setAttribute('directory', v[0])
             package_name_node.setAttribute('name', v[1])
             package_name_node.setAttribute('version', \
                 get_repo_version(BRANCHES[svn_repo][1], v[1]))
