@@ -67,11 +67,12 @@ PACKAGES = {
     },
 
     'xrdp':{
-        'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
+        'xrdp'    : ['', 'xrdp', [['make', 'distcheck']], ANY_ARCH],
     },
 
     'vdi':{
-        'host'    : ['host', 'vdi-host', PYTHON_CMD, ALL_ARCH],
+        'guest'   : ['host', 'vdi-guest', PYTHON_CMD, ALL_ARCH],
+        'host'    : ['host', 'vdi-host',  PYTHON_CMD, ALL_ARCH],
     }
 }
 
