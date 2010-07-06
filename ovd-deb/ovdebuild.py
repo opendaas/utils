@@ -43,18 +43,27 @@ class ovdebuild:
 
         self._dist_name = BRANCHES[self._branch][1]
         self._svn_folder = PACKAGES[self._branch][self._module][0]
-        if self._svn_folder is not META:
-            self._svn_dir = os.path.join(self._svn_base, self._svn_folder)
-        else:
-            self._svn_dir = ''
         self._module_name = PACKAGES[self._branch][self._module][1]
 
+        # prepare log system
         logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
         self._logfile = '%s/%s-%s_%s.txt'%\
             (logfile_dir, self._module_name, self._revno,  int(time.time()))
         if not os.path.isdir(logfile_dir):
             os.makedirs(logfile_dir)
 
+        if self._svn_folder is not META:
+            self._svn_dir = os.path.join(self._svn_base, self._svn_folder)
+
+            # launch the autogen
+            if os.path.exists(os.path.join(self._svn_dir, "autogen")):
+                self._log(" Prepare the source (autogen):", True)
+                self._run(['./autogen'], cwd=self._svn_dir)
+                self._log_end()
+        else:
+            self._svn_dir = ''
+
+        # find the good debian folder
         debdir = "%s/%s" % (self._svn_base, BRANCHES[self._branch][2])
         svn_deb_dirs = [debdir+'/debian',
              '%s/%s/debian' % (debdir, self._module_name),
@@ -140,19 +149,11 @@ class ovdebuild:
 
 
     def _get_base_version(self):
-        sys.path.append(self._svn_dir)
-
-        if os.path.exists(os.path.join(self._svn_dir, "autogen")):
-            self._log(" Prepare the source (autogen):", True)
-            self._run(['./autogen'], cwd=self._svn_dir)
-            self._log_end()
-
-        elif os.path.exists(os.path.join(self._svn_dir, "autogen.py")):
-            import autogen
-            del sys.modules['autogen']
 
         if os.path.exists(os.path.join(self._svn_dir, "setup.py")):
+            sys.path.append(self._svn_dir)
             imported = __import__('setup', fromlist=['setup_args'])
+            sys.path.remove(self._svn_dir)
             version = imported.setup_args['version']
 
         elif os.path.exists(os.path.join(self._svn_dir, "build.xml")):
@@ -185,7 +186,6 @@ class ovdebuild:
         else:
             raise Exception("no way to find how get the base version")
 
-        sys.path.remove(self._svn_dir)
         return version
 
 
@@ -231,9 +231,9 @@ class ovdebuild:
 
         def make_tarball(rename=None):
             self._log(" Building the source tarball:", True)
-            for cmd in PACKAGES[self._branch][self._module][2]:
-                if not self._run (cmd, cwd=self._svn_dir):
-                    return self._log_end("Cannot build the tarball", 'tarball')
+            cmd = PACKAGES[self._branch][self._module][2]
+            if not self._run (cmd, cwd=self._svn_dir):
+                return self._log_end("Cannot build the tarball", 'tarball')
 
             # move tarball in build directory
             tarball = '%s-%s.tar.gz'%(self._module_name, self._base_version)
