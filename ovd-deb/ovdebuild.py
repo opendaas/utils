@@ -49,6 +49,12 @@ class ovdebuild:
             self._svn_dir = ''
         self._module_name = PACKAGES[self._branch][self._module][1]
 
+        logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
+        self._logfile = '%s/%s-%s_%s.txt'%\
+            (logfile_dir, self._module_name, self._revno,  int(time.time()))
+        if not os.path.isdir(logfile_dir):
+            os.makedirs(logfile_dir)
+
         debdir = "%s/%s" % (self._svn_base, BRANCHES[self._branch][2])
         svn_deb_dirs = [debdir+'/debian',
              '%s/%s/debian' % (debdir, self._module_name),
@@ -76,12 +82,6 @@ class ovdebuild:
         self._src_name = '%s_%s'%(self._module_name, self._version)
         self._src_dir = os.path.join(BUILD_DIR, self._tarball_name)
         self._results_dir = os.path.join(RESULTS_DIR, self._dist_name)
-
-        logfile_dir = '%s/%s' % (LOGS_DIR, self._dist_name)
-        self._logfile = '%s/%s-%s_%s.txt'%\
-            (logfile_dir, self._module_name, self._revno,  int(time.time()))
-        if not os.path.isdir(logfile_dir):
-            os.makedirs(logfile_dir)
 
         self._patches = []
         self._sumup = { 'tarball': True, 'srcbuild': True,\
@@ -142,7 +142,12 @@ class ovdebuild:
     def _get_base_version(self):
         sys.path.append(self._svn_dir)
 
-        if os.path.exists(os.path.join(self._svn_dir, "autogen.py")):
+        if os.path.exists(os.path.join(self._svn_dir, "autogen")):
+            self._log(" Prepare the source (autogen):", True)
+            self._run(['./autogen'], cwd=self._svn_dir)
+            self._log_end()
+
+        elif os.path.exists(os.path.join(self._svn_dir, "autogen.py")):
             import autogen
             del sys.modules['autogen']
 
