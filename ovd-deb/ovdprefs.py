@@ -27,9 +27,9 @@ BRANCHES = {
     'vdi'   : ['vdi', 'trunk', 'packaging/debian'],
 }
 
-AUTOTOOLS_CMD = [['./autogen.sh'], ['make', 'distcheck']]
-ANT_CMD = [['ant', 'dist']]
-PYTHON_CMD = [['python', 'setup.py', 'sdist', '--dist-dir=.']]
+AUTOTOOLS_CMD = ['make', 'distcheck']
+ANT_CMD = ['ant', 'dist']
+PYTHON_CMD = ['python', 'setup.py', 'sdist', '--dist-dir=.']
 META_CMD = []
 
 ANY_ARCH = ['amd64', 'i386']
@@ -67,7 +67,7 @@ PACKAGES = {
     },
 
     'xrdp':{
-        'xrdp'    : ['', 'xrdp', [['make', 'distcheck']], ANY_ARCH],
+        'xrdp'    : ['', 'xrdp', AUTOTOOLS_CMD, ANY_ARCH],
     },
 
     'vdi':{
