@@ -71,7 +71,7 @@ PACKAGES = {
     },
 
     'vdi':{
-        'guest'   : ['host', 'vdi-guest', PYTHON_CMD, ALL_ARCH],
+        'guest'   : ['guest', 'vdi-guest', PYTHON_CMD, ALL_ARCH],
         'host'    : ['host', 'vdi-host',  PYTHON_CMD, ALL_ARCH],
     }
 }
