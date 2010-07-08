@@ -28,7 +28,7 @@ BRANCHES = {
 }
 
 AUTOTOOLS_CMD = ['make', 'distcheck']
-ANT_CMD = ['ant', 'dist']
+ANT_CMD = ['ant', 'dist', , '-Ddistdir=.']
 PYTHON_CMD = ['python', 'setup.py', 'sdist', '--dist-dir=.']
 META_CMD = []
 
