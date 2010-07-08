@@ -154,14 +154,13 @@ class ovdebuild:
             sys.path.append(self._svn_dir)
             imported = __import__('setup', fromlist=['setup_args'])
             sys.path.remove(self._svn_dir)
-            version = imported.setup_args['version']
+            return imported.setup_args['version']
 
         elif os.path.exists(os.path.join(self._svn_dir, "build.xml")):
                 dom = parse(os.path.join(self._svn_dir, "build.xml"))
                 for p in dom.getElementsByTagName('property'):
                     if p.getAttribute('name') == "version":
-                        version = p.getAttribute('value')
-                        break
+                        return p.getAttribute('value')
 
         elif  os.path.exists(os.path.join(self._svn_dir, "configure.ac.in")) or \
               os.path.exists(os.path.join(self._svn_dir, "configure.in.in")):
@@ -172,9 +171,12 @@ class ovdebuild:
             lines = open(config).readlines()[:3]
             major = major_re.search(lines[0]).group(1)
             minor = minor_re.search(lines[1]).group(1)
-            build = build_re.search(lines[2]).group(1)
+            try:
+                build = build_re.search(lines[2]).group(1)
+            except AttributeError:
+                build = ''
             version = '%s.%s%s'%(major, minor, build)
-            version = version.replace('@REVISION@', self._revno)
+            return version.replace('@REVISION@', self._revno)
 
         elif self._svn_folder is META:
             fd = open(os.path.join(self._svn_deb_dir, "version"), 'r')
@@ -185,8 +187,6 @@ class ovdebuild:
 
         else:
             raise Exception("no way to find how get the base version")
-
-        return version
 
 
     def _get_changelog_version(self):
@@ -386,7 +386,6 @@ class ovdebuild:
         if ret:
             self._run(['ovdreprepro', 'flood', \
                         self._dist_name], ssh=True)
-            self._run(['ovd-needs-building'], ssh=True)
             return self._log_end()
 
         return self._log_end("Cannot publish the package", 'publish')
