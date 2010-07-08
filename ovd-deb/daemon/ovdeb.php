@@ -23,7 +23,11 @@ function print_array($data_, $n_=0) {
 	}
 }
 
-if (isset($_REQUEST['addjob'])) {
+if (is_file(dirname(__FILE__).'/maintenance')) {
+    define('MAINTENANCE', true);
+}
+
+if (isset($_REQUEST['addjob']) && ! defined(MAINTENANCE)) {
 	if (isset($_REQUEST['branch']) && $_REQUEST['branch'] != '' &&
         isset($_REQUEST['package'])) {
 		$file_path = SPOOL.'/incoming/'.time().'_'.rand();
@@ -83,6 +87,10 @@ foreach ($branch_nodes as $branch_node) {
 }
 krsort($branches);
 
+if (defined('MAINTENANCE')) {
+   echo '<strong style="color:red; text-align:center;">The System is currently in maintenance</strong>';
+}
+
 echo '<table border="1"><tr>';
 foreach( $branches as $branch => $package) {
 	echo "<td><center>$branch</center></td>";
@@ -96,16 +104,18 @@ foreach( $branches as $branch => $package) {
 	echo '<tr><th>Name</th><th>Repository</th><th>Action</th></tr>';
 	foreach($package as $alias => $infos) {
 		echo '<tr><td>'.$infos['name'].'</td><td>'.$infos['version'].'</td><td>';
-		if (! isset($inprogress[$branch][$alias])) {
-			echo '<form action="" method="POST">';
-            echo '<input type="hidden" name="branch" value="'.$branch.'" />';
-            echo '<input type="hidden" name="package" value="'.$alias.'" />';
-			echo '<input type="submit" name="addjob" value="Generate" /></form>';
-		}
-		else {
-			echo '<span style="color:red;"><center>X<center></span>';
-		}
-		echo '</td></tr>';
+		echo '<form action="" method="POST">';
+        echo '<input type="hidden" name="branch" value="'.$branch.'" />';
+        echo '<input type="hidden" name="package" value="'.$alias.'" />';
+		if (isset($inprogress[$branch][$alias]) ||
+            isset($inprogress[$branch]['']) ||
+            defined('MAINTENANCE')) {
+            $nosubmit = 'disabled="disabled"';
+        } else {
+            $nosubmit = '';
+        }
+        echo '<input type="submit" name="addjob" value="Generate" '.$nosubmit.' />';
+		echo '</form></td></tr>';
 	}
 	echo '</table></td></td>';
 }

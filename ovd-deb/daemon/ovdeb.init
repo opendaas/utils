@@ -14,7 +14,6 @@
 
 PIDFILE=/var/run/ovdeb.pid
 DAEMONDIR=/home/packaging/ovd-deb/daemon
-HTMLPATH=/home/packaging/public_html/ovdeb/index.php
 
 case "$1" in
 
@@ -27,7 +26,7 @@ case "$1" in
         chown packaging $PIDFILE
     fi
     su packaging -l -c "sh $DAEMONDIR/ovdaemon.sh $DAEMONDIR"
-    ln -sf $DAEMONDIR/ovdeb.php $HTMLPATH
+    rm -f $DAEMONDIR/maintenance
     log_success_msg "OVDEB daemon launch"
   ;;
 
@@ -37,7 +36,7 @@ case "$1" in
   ;;
 
   stop)
-    ln -sf $DAEMONDIR/unvailable.html $HTMLPATH
+    touch $DAEMONDIR/maintenance
     if [ -f $PIDFILE ]; then
         DAEMONPID=$(cat $PIDFILE | tr -d '[:blank:]')
         rm $PIDFILE
