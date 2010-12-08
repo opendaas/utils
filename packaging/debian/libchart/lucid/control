@@ -2,7 +2,7 @@ Source: libchart
 Section: web
 Priority: extra
 Maintainer: Samuel Bovée <samuel@ulteo.com>
-Build-Depends: debhelper (>= 6), cdbs
+Build-Depends: debhelper (>= 6), cdbs, quilt
 Standards-Version: 3.7.3
 
 Package: php-libchart
