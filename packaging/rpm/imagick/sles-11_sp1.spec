@@ -6,7 +6,7 @@
 # maybe not the good folder ! or remove it ?
 
 Summary:       Extension to create and modify images using ImageMagick
-Name:          php5-%{pecl_name}
+Name:          php5-imagick
 Version:       3.0.1
 Release:       2
 License:       PHP
