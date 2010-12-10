@@ -5,4 +5,3 @@ if [ -x /usr/bin/apt-key ]; then
 fi
 
 rm /var/lib/apt/lists/archive.ulteo.com_*
-apt-cache gencaches >/dev/null
