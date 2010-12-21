@@ -8,10 +8,10 @@
 Summary:       Extension to create and modify images using ImageMagick
 Name:          php5-imagick
 Version:       3.0.1
-Release:       2
+Release:       3
 License:       PHP
 Group:         Development/Languages
-Vendor:        Ulteo SAS
+Vendor:        Ulteo SAS <http://www.ulteo.com>
 Packager:      Samuel Bovée <samuel@ulteo.com>
 Distribution:  SLES 11 SP1
 
@@ -27,13 +27,16 @@ Requires:      php = %{php_ver}
 %endif
 Provides:      php-pecl(%{pecl_name}) = %{version}
 
+
 %description
 Imagick is a native php extension to create and modify images
 using the ImageMagick API.
 
+
 %prep
 %setup -q -c
 cd %{pecl_name}-%{version}
+
 
 %build
 cd %{pecl_name}-%{version}
@@ -59,8 +62,8 @@ EOF
 
 popd
 # Install XML package description
-mkdir -p $RPM_BUILD_ROOT/%{pecl_xmldir}
-install -pm 644 package.xml $RPM_BUILD_ROOT/%{pecl_xmldir}/%{name}.xml
+%{__mkdir_p} %{buildroot}/%{pecl_xmldir}
+install -pm 644 package.xml %{buildroot}/%{pecl_xmldir}/%{name}.xml
 
 
 %if 0%{?pecl_install:1}
@@ -89,6 +92,7 @@ fi
 %{php_extdir}/%{pecl_name}.so
 %{pecl_xmldir}/%{name}.xml
 /usr/include/php5/ext/imagick/*.h
+
 
 %changelog
 * Thu Nov 25 2010 Samuel Bovee <samuel@ulteo.com> 3.0.1-1

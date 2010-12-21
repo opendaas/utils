@@ -8,10 +8,12 @@
 Summary:       Extension to create and modify images using ImageMagick
 Name:          php5-imagick
 Version:       3.0.1
-Release:       1
+Release:       2
 License:       PHP
 Group:         Development/Languages
-URL:           http://pecl.php.net/package/%{pecl_name}
+Vendor:        Ulteo SAS <http://www.ulteo.com>
+Packager:      Samuel Bovée <samuel@ulteo.com>
+Distribution:  SLES 11 SP1
 
 Source:        http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -49,8 +51,8 @@ pushd %{pecl_name}-%{version}
 %{__make} install INSTALL_ROOT=%{buildroot}
 
 # Drop in the bit of configuration
-%{__mkdir_p} %{buildroot}%{_sysconfdir}/php.d
-%{__cat} > %{buildroot}%{_sysconfdir}/php.d/%{name}.ini << 'EOF'
+%{__mkdir_p} %{buildroot}%{_sysconfdir}/php5/conf.d
+%{__cat} > %{buildroot}%{_sysconfdir}/php5/conf.d/%{name}.ini << 'EOF'
 ; Enable %{pecl_name} extension module
 extension = %{pecl_name}.so
 
@@ -61,7 +63,7 @@ EOF
 popd
 # Install XML package description
 %{__mkdir_p} %{buildroot}/%{pecl_xmldir}
-install -pm 644 package.xml $RPM_BUILD_ROOT/%{pecl_xmldir}/%{name}.xml
+install -pm 644 package.xml %{buildroot}/%{pecl_xmldir}/%{name}.xml
 
 
 %if 0%{?pecl_install:1}
@@ -86,7 +88,7 @@ fi
 %defattr(-, root, root, 0755)
 %doc %{pecl_name}-%{version}/CREDITS %{pecl_name}-%{version}/TODO
 %doc %{pecl_name}-%{version}/examples
-%config(noreplace) %{_sysconfdir}/php.d/%{name}.ini
+%config(noreplace) %{_sysconfdir}/php5/conf.d/%{name}.ini
 %{php_extdir}/%{pecl_name}.so
 %{pecl_xmldir}/%{name}.xml
 /usr/include/php5/ext/imagick/*.h
