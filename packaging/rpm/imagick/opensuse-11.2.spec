@@ -8,7 +8,7 @@
 Summary:       Extension to create and modify images using ImageMagick
 Name:          php5-imagick
 Version:       3.0.1
-Release:       1
+Release:       2
 License:       PHP
 Group:         Development/Languages
 URL:           http://pecl.php.net/package/%{pecl_name}
@@ -46,8 +46,8 @@ pushd %{pecl_name}-%{version}
 %{__make} install INSTALL_ROOT=%{buildroot}
 
 # Drop in the bit of configuration
-%{__mkdir_p} %{buildroot}%{_sysconfdir}/php.d
-%{__cat} > %{buildroot}%{_sysconfdir}/php.d/%{name}.ini << 'EOF'
+%{__mkdir_p} %{buildroot}%{_sysconfdir}/php5/conf.d
+%{__cat} > %{buildroot}%{_sysconfdir}/php5/conf.d/%{pecl_name}.ini << 'EOF'
 ; Enable %{pecl_name} extension module
 extension = %{pecl_name}.so
 
@@ -83,7 +83,7 @@ fi
 %defattr(-, root, root, 0755)
 %doc %{pecl_name}-%{version}/CREDITS %{pecl_name}-%{version}/TODO
 %doc %{pecl_name}-%{version}/examples
-%config(noreplace) %{_sysconfdir}/php.d/%{name}.ini
+%config(noreplace) %{_sysconfdir}/php5/conf.d/%{pecl_name}.ini
 %{php_extdir}/%{pecl_name}.so
 %{pecl_xmldir}/%{name}.xml
 /usr/include/php5/ext/imagick/*.h
