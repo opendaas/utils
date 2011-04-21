@@ -1,0 +1,5 @@
+python-passfd (0.2-1) lucid; urgency=low
+
+  * Initial release.
+
+ -- Samuel Bovée <samuel@ulteo.com>  Thu, 21 Apr 2011 14:19:58 +0200
