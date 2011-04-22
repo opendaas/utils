@@ -10,6 +10,7 @@ XS-Python-Version: >= 2.6
 Package: python-passfd
 Architecture: any
 Depends: ${python:Depends}
+XB-Python-Version: ${python:Versions}
 Description: Python functions to pass file descriptors across UNIX domain sockets
  This simple extension provides two functions to pass and receive file
  descriptors across UNIX domain sockets, using the BSD-4.3+ sendmsg() and
