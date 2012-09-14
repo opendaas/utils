@@ -2,7 +2,7 @@ Source: tigervnc
 Section: x11
 Priority: optional
 Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
-Build-Depends: wget, libtool, cmake, libxft-dev, libxinerama-dev, libxcursor-dev, libjpeg-dev, libexpat1-dev, libssl-dev
+Build-Depends: debhelper (>= 6), cdbs, quilt, wget, libtool, cmake, libxft-dev, libxinerama-dev, libxcursor-dev, libjpeg-dev, libexpat1-dev, libssl-dev
 Standards-Version: 3.7.3
 
 Package: tigervnc-server
