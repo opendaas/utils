@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/rules/patchsys-quilt.mk
+
+XORG_VERSION=7.4
+
+build/tigervnc-server::
+	unix/build-xorg init -version $(XORG_VERSION)
+	unix/build-xorg build -version $(XORG_VERSION) -parallel
+
+install/tigervnc-server::
+	mv xorg.build/bin/Xvnc xorg.build/bin/xtigervnc
+	mv xorg.build/share/man/man1/Xvnc.1 xorg.build/share/man/man1/xtigervnc.1

@@ -1,0 +1,15 @@
+--- a/unix/xserver/hw/vnc/Input.cc	2012-09-11 17:38:21.000000000 +0200
++++ b/unix/xserver/hw/vnc/Input.cc	2012-09-11 17:47:12.000000000 +0200
+@@ -702,6 +702,12 @@
+ 	    ((state & (1 << ShiftMapIndex))) != 0)
+ 		col |= 1;
+ 
++        if (keysym == XK_KP_0 || keysym == XK_KP_1 || keysym == XK_KP_2 ||
++            keysym == XK_KP_3 || keysym == XK_KP_4 || keysym == XK_KP_5 ||
++            keysym == XK_KP_6 || keysym == XK_KP_7 || keysym == XK_KP_8 ||
++            keysym == XK_KP_9 || keysym == XK_KP_Decimal)
++                col = 0;
++
+ 	if (kc == 0) {
+ 		/*
+ 		 * Not a direct match in the local keyboard mapping.  Check for

@@ -1,0 +1,2 @@
+xorg.build/bin/xtigervnc /usr/bin
+xorg.build/lib/dri/* /usr/lib/tigervnc_dri
