@@ -1,7 +1,7 @@
 Source: cdbs-xfce
 Section: devel
 Priority: optional
-Maintainer: Samuel Bovée <samuel@ulteo.com>
+Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
 Build-Depends: debhelper (>= 7), cdbs
 Standards-Version: 3.8.4
 Homepage: http://www.ulteo.com/

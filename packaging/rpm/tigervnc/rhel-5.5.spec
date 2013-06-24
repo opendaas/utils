@@ -8,7 +8,6 @@ Group: Applications/x11
 Vendor: Ulteo SAS
 Packager: David PHAM-VAN <d.pham-van@ulteo.com>
 URL: http://www.ulteo.com
-Distribution: RHEL 5.5
 
 Source: %{name}-%{version}.tar.gz
 Buildroot: %{buildroot}

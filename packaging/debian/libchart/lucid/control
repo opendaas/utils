@@ -1,7 +1,7 @@
 Source: libchart
 Section: web
 Priority: extra
-Maintainer: Samuel Bovée <samuel@ulteo.com>
+Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
 Build-Depends: debhelper (>= 6), cdbs, quilt
 Standards-Version: 3.7.3
 
