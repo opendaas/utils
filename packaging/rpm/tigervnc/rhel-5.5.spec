@@ -31,9 +31,9 @@ systems.
 %setup
 
 %install
-install -D bin/xtigervnc %buildroot/usr/bin/xtigervnc
-mkdir -p %buildroot/usr/lib/tigervnc_dri
-install lib/dri/* %buildroot/usr/lib/tigervnc_dri/
+install -D bin/xtigervnc %{buildroot}%{_bindir}/xtigervnc
+mkdir -p %{buildroot}%{_libdir}/tigervnc_dri
+install lib/dri/* %{buildroot}%{_libdir}/tigervnc_dri/
 ln -s /usr/bin/xtigervnc %buildroot/usr/bin/Xvnc
 
 %clean
