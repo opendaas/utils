@@ -702,6 +702,12 @@ ModeSwitchFound:
 	    ((state & (1 << ShiftMapIndex))) != 0)
 		col |= 1;
 
+        if (keysym == XK_KP_0 || keysym == XK_KP_1 || keysym == XK_KP_2 ||
+            keysym == XK_KP_3 || keysym == XK_KP_4 || keysym == XK_KP_5 ||
+            keysym == XK_KP_6 || keysym == XK_KP_7 || keysym == XK_KP_8 ||
+            keysym == XK_KP_9 || keysym == XK_KP_Decimal)
+                col = 0;
+
 	if (kc == 0) {
 		/*
 		 * Not a direct match in the local keyboard mapping.  Check for
