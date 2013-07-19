@@ -213,6 +213,8 @@ rebuild ()
     # Build VNC
     echo "*** Building VNC ***"
     $MAKE ${1+"$@"}
+    
+    cp -r unix/xserver xorg/
 
     # build xserver
     echo "*** Building xserver ***"
