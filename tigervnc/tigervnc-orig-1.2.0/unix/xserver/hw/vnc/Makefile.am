@@ -20,26 +20,26 @@ libvnccommon_la_CPPFLAGS = -DVENDOR_RELEASE="$(VENDOR_RELEASE)" \
 	-I$(TIGERVNC_SRCDIR)/unix/vncconfig $(XVNC_CPPFLAGS) ${XSERVERLIBS_CFLAGS} -I$(includedir) \
 	-I$(top_srcdir)/include
 
-bin_PROGRAMS = Xvnc
+bin_PROGRAMS = xovdvnc
 
 man1_MANS = Xvnc.man
 
-Xvnc_SOURCES = xvnc.cc \
+xovdvnc_SOURCES = xvnc.cc \
 	$(top_srcdir)/Xi/stubs.c $(top_srcdir)/mi/miinitext.c \
 	$(top_srcdir)/fb/fbcmap_mi.c buildtime.c
 
-nodist_Xvnc_SOURCES = fbrop.h fb.h pixman.h
+nodist_xovdvnc_SOURCES = fbrop.h fb.h pixman.h
 
-Xvnc_CPPFLAGS = $(XVNC_CPPFLAGS) -DTIGERVNC -DNO_MODULE_EXTS \
+xovdvnc_CPPFLAGS = $(XVNC_CPPFLAGS) -DTIGERVNC -DNO_MODULE_EXTS \
 	-UHAVE_CONFIG_H \
 	-DXFree86Server -DVENDOR_RELEASE="$(VENDOR_RELEASE)" \
 	-DVENDOR_STRING="\"$(VENDOR_STRING)\"" -I$(TIGERVNC_SRCDIR)/common \
 	-I$(top_srcdir)/include ${XSERVERLIBS_CFLAGS} -I$(includedir)
 
-Xvnc_LDADD = $(XVNC_LIBS) libvnccommon.la $(COMMON_LIBS) \
+xovdvnc_LDADD = $(XVNC_LIBS) libvnccommon.la $(COMMON_LIBS) \
 	$(XSERVER_LIBS) $(XSERVER_SYS_LIBS) $(XVNC_SYS_LIBS) -lX11
 
-Xvnc_LDFLAGS = $(LD_EXPORT_SYMBOLS_FLAG)
+xovdvnc_LDFLAGS = $(LD_EXPORT_SYMBOLS_FLAG)
 
 libvnc_la_LTLIBRARIES = libvnc.la
 libvnc_ladir = $(moduledir)/extensions
@@ -60,7 +60,7 @@ libvnc_la_LIBADD = libvnccommon.la $(COMMON_LIBS)
 EXTRA_DIST = Xvnc.man
 
 # C++ hacks
-BUILT_SOURCES = $(nodist_Xvnc_SOURCES)
+BUILT_SOURCES = $(nodist_xovdvnc_SOURCES)
 
 fb.h: $(top_srcdir)/fb/fb.h
 	cat $(top_srcdir)/fb/fb.h | sed -e 's,and,c_and,' -e 's,xor,c_xor,' > $(srcdir)/fb.h
