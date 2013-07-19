@@ -28,27 +28,16 @@ XORG_VERSION=7.4
 
 unset LANG
 
-if [ -d $VERSION ]; then
-	rm -rf $VERSION
-fi
-
-mkdir ${VERSION}
 pushd ${VERSION}
-
-tar -zx --strip 1 -f ../${VERSION}.tar.gz
-
-for p in ../*.patch; do
-	patch -p1 < $p
-done
 
 unix/build-xorg init -version ${XORG_VERSION}
 unix/build-xorg build -version ${XORG_VERSION} -parallel
 
-mv xorg.build/bin/Xvnc xorg.build/bin/xtigervnc
-mv xorg.build/share/man/man1/Xvnc.1 xorg.build/share/man/man1/xtigervnc.1
+# mv xorg.build/bin/Xvnc xorg.build/bin/xtigervnc
+# mv xorg.build/share/man/man1/Xvnc.1 xorg.build/share/man/man1/xtigervnc.1
 
-mv xorg.build/* ../
+# mv xorg.build/* ../
 
 popd
 
-rm -rf ${VERSION}
+# rm -rf ${VERSION}
