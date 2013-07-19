@@ -22,7 +22,7 @@ libvnccommon_la_CPPFLAGS = -DVENDOR_RELEASE="$(VENDOR_RELEASE)" \
 
 bin_PROGRAMS = xovdvnc
 
-man1_MANS = Xvnc.man
+man1_MANS = xovdvnc.man
 
 xovdvnc_SOURCES = xvnc.cc \
 	$(top_srcdir)/Xi/stubs.c $(top_srcdir)/mi/miinitext.c \
@@ -57,7 +57,7 @@ libvnc_la_LDFLAGS = -module -avoid-version
 
 libvnc_la_LIBADD = libvnccommon.la $(COMMON_LIBS)
 
-EXTRA_DIST = Xvnc.man
+EXTRA_DIST = xovdvnc.man
 
 # C++ hacks
 BUILT_SOURCES = $(nodist_xovdvnc_SOURCES)
