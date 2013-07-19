@@ -1,9 +1,0 @@
-#!/bin/sh -e
-
-. /usr/share/debconf/confmodule
-
-[ "$1" != "upgrade" ] && update-alternatives --remove Xvnc /usr/bin/xtigervnc
-
-#DEBHELPER#
-
-exit 0

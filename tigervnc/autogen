@@ -36,7 +36,7 @@ unix/build-xorg build -version ${XORG_VERSION} -parallel
 # mv xorg.build/bin/Xvnc xorg.build/bin/xtigervnc
 # mv xorg.build/share/man/man1/Xvnc.1 xorg.build/share/man/man1/xtigervnc.1
 
-# mv xorg.build/* ../
+mv xorg.build/* ../
 
 popd
 

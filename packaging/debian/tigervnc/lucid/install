@@ -1,2 +1,0 @@
-bin/xtigervnc /usr/bin
-lib/dri/* /usr/lib/tigervnc_dri

@@ -1,9 +1,0 @@
-#! /bin/sh -e
-
-. /usr/share/debconf/confmodule
-
-update-alternatives --install /usr/bin/Xvnc Xvnc /usr/bin/xtigervnc 80
-
-#DEBHELPER#
-
-exit 0

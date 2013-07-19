@@ -1,4 +1,4 @@
-Name: tigervnc
+Name: ulteo-ovd-vnc-server
 Version: @VERSION@
 Release: @RELEASE@
 
@@ -30,10 +30,10 @@ systems.
 %setup
 
 %install
-install -D bin/xtigervnc %{buildroot}%{_bindir}/xtigervnc
-mkdir -p %{buildroot}%{_libdir}/tigervnc_dri
-install lib/dri/* %{buildroot}%{_libdir}/tigervnc_dri/
-ln -s /usr/bin/xtigervnc %buildroot/usr/bin/Xvnc
+install -D bin/xovdvnc %{buildroot}%{_bindir}/xovdvnc
+mkdir -p %{buildroot}%{_libdir}/ovdvnc_dri
+install lib/dri/* %{buildroot}%{_libdir}/ovdvnc_dri/
+ln -s /usr/bin/xovdvnc %buildroot/usr/bin/Xvnc
 
 %clean
 %{__rm} -rf $RPM_BUILD_ROOT
