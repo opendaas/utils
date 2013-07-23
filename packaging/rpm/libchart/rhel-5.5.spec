@@ -17,6 +17,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+%define php_bin %(basename `php-config --php-binary`)
+%if %{defined rhel}
+%define datadir %{pecl_datadir}
+%else
+%define datadir /usr/share/%{php_bin}
+%endif
+
 Name: php-libchart
 Version: @VERSION@
 Release: @RELEASE@
@@ -31,18 +38,17 @@ URL: http://www.ulteo.com
 Source: %{name}-%{version}.tar.gz
 BuildArch: noarch
 Buildroot: %{buildroot}
+Requires: %{php_bin}, %{php_bin}-gd
+Provides: php5-libchart
 
 %description
 Libchart is a free chart creation PHP library, that is easy to use.
-
-Requires: php, php-gd
-Provides: php5-libchart
 
 %prep
 %setup -q
 
 %install
-PHPDIR=%{buildroot}/usr/share/php
+PHPDIR=%{buildroot}%{datadir}
 LIBCHARTDIR=$PHPDIR/libchart
 mkdir -p $PHPDIR
 cp -r libchart $PHPDIR
