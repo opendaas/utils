@@ -1,0 +1,58 @@
+upbuilder:
+  deb: "packaging/debian/$(module)"
+  rpm: "packaging/rpm/$(module)"
+  packages:
+    cdbs:
+      version: "0.1"
+      src: "cdbs-xfce"
+      module: "cdbs-xfce"
+      builder: tar
+      archs: $(consts.ALL_ARCH)
+    keyring:
+      version: "20101119"
+      src: "keyring"
+      module: "keyring"
+      builder: tar
+      archs: $(consts.ALL_ARCH)
+    libchart:
+      version: "1.2.2"
+      src: "libchart"
+      module: "libchart"
+      builder: tar
+      archs: $(consts.ALL_ARCH)
+    imagick:
+      version: "3.0.1"
+      src: "imagick"
+      module: "imagick"
+      builder: tar
+      archs: $(consts.ANY_ARCH)
+    passfd:
+      version: "0.2"
+      src: "python-passfd"
+      module: "python-passfd"
+      builder: tar
+      archs: $(consts.ANY_ARCH)
+    tigervnc:
+      src: "tigervnc"
+      module: "ulteo-ovd-vnc-server"
+      builder: tar
+      archs: ['i386']
+    tigervnc64:
+      autogen_chroot: lucid64
+      tarball_name: tigervnc64
+      src: "tigervnc"
+      module: "ulteo-ovd-vnc-server"
+      builder: tar
+      archs: ['amd64']
+    yaml:
+      version: "1.1.0"
+      src: "php-yaml"
+      module: "php-yaml"
+      builder: tar
+      archs: $(consts.ANY_ARCH)
+    pyntlm:
+      version: "1.0.1"
+      src: "python-ntlm"
+      module: "python-ntlm"
+      builder: tar
+      archs: $(consts.ALL_ARCH)
