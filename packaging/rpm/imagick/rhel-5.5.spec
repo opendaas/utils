@@ -20,7 +20,11 @@
 
 %define php_ver %((echo %{default_apiver}; php -i 2>/dev/null | sed -n 's/^PHP Version => //p') | tail -1)
 %define php_bin %(basename `php-config --php-binary`)
-%define php_etc %(if [ `echo %{dist}|cut -d- -f1` == rhel ]; then echo "php.d"; else echo "php5/conf.d"; fi)
+%if %{defined rhel}
+%define php_etc php.d
+%else
+%define php_etc php5/conf.d
+%endif
 %{!?php_extdir: %{expand: %%global php_extdir %(php-config --extension-dir)}}
 
 %define pecl_name imagick
@@ -46,7 +50,7 @@ Requires:      php(api) = %{php_core_api}
 %else
 Requires:      php = %{php_ver}
 %endif
-Provides:      php-pecl(%{pecl_name}) = %{version}
+Provides:      php-pecl(%{pecl_name}) = %{version}, php5-imagick
 
 
 %description

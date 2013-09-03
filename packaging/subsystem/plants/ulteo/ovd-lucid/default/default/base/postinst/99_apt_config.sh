@@ -12,7 +12,7 @@ EOF
 
 cat > /etc/apt/sources.list.d/ulteo_ovd.list << EOF
 # Ulteo repositories
-deb http://archive.ulteo.com/ovd/$OVD_VERSION/ubuntu lucid main
+deb $PUBLISH_URI/ubuntu lucid main
 deb http://archive.ulteo.com/ovd/desktop hardy main universe ulteo
 EOF
 
