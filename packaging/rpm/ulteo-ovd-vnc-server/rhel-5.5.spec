@@ -8,6 +8,7 @@ Group: Applications/x11
 Vendor: Ulteo SAS
 Packager: David PHAM-VAN <d.pham-van@ulteo.com>
 URL: http://www.ulteo.com
+Conflicts: tigervnc-server
 
 Source: %{name}-%{version}.tar.gz
 Buildroot: %{buildroot}
