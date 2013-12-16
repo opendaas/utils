@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-# stop XRDP services to clean some persistent files
+# stop UXDA services to clean some persistent files
 
-/etc/init.d/xrdp stop
+/etc/init.d/uxda-server stop
 
 exit 0
