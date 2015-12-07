@@ -38,7 +38,7 @@ else()
 endif()
 
 if(USE_INCLUDED_FLTK)
-  target_link_libraries(vncviewer fltk_static)
+  target_link_libraries(vncviewer fltk_static ${FLTK_STATIC_LIBRARIES})
 endif()
 target_link_libraries(vncviewer rfb network rdr os Xregion ${FLTK_LIBRARIES} ${GETTEXT_LIBRARIES})
 
